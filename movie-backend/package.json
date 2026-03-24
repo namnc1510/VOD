@@ -1,0 +1,41 @@
+{
+    "name": "movie-backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "nodemon index.js",
+        "seed:preview": "node scripts/seed-preview-data.js",
+        "db:sync": "node scripts/sync-data.js",
+        "db:sync:dry": "node scripts/sync-data.js --dry-run",
+        "db:audit:images": "node scripts/audit-movie-images.js",
+        "db:fix:images:dry": "node scripts/fix-movie-images.js --dry-run",
+        "db:fix:images": "node scripts/fix-movie-images.js",
+        "seed:episodes:dry": "node scripts/seed-random-episodes.js --dry-run",
+        "seed:episodes": "node scripts/seed-random-episodes.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "@streamvue/shared-core": "file:../shared-core",
+        "bcryptjs": "^3.0.3",
+        "cloudinary": "^1.41.3",
+        "cors": "^2.8.6",
+        "dotenv": "^17.3.1",
+        "express": "^5.2.1",
+        "google-auth-library": "^10.6.2",
+        "jsonwebtoken": "^9.0.3",
+        "mongoose": "^9.2.4",
+        "multer": "^2.1.1",
+        "multer-storage-cloudinary": "^4.0.0",
+        "slugify": "^1.6.8",
+        "xlsx": "^0.18.5"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14"
+    }
+}

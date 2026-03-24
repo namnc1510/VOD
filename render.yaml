@@ -1,0 +1,27 @@
+# Bản mẫu Blueprint Deploy tự động cho Render.com
+# Cách dùng: Trên Render.com -> Blueprints -> New Blueprint Instance -> Kết nối Github
+services:
+  - type: web
+    name: movie-backend-api
+    env: node
+    # Root directory để trống để script chạy có thể truy cập được thư viện shared-core
+    rootDir: .
+    buildCommand: cd movie-backend && npm install
+    startCommand: cd movie-backend && npm start
+    envVars:
+      - key: MONGO_URI
+        value: "Hãy_Điền_Chuỗi_Kết_Nối_MongoDB_Của_Bạn_Vào_Bảng_Điều_Khiển"
+      - key: JWT_SECRET
+        value: "Thay_Doi_Chuoi_Bi_Mat_Cua_Ban"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: "Thay_Doi"
+      - key: CLOUDINARY_API_KEY
+        value: "Thay_Doi"
+      - key: CLOUDINARY_API_SECRET
+        value: "Thay_Doi"
+      - key: VNP_TMNCODE
+        value: "Thay_Doi"
+      - key: VNP_HASHSECRET
+        value: "Thay_Doi"
+      - key: FRONTEND_URL
+        value: "https://your-vercel-domain.vercel.app"
