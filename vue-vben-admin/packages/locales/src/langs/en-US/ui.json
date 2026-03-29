@@ -1,0 +1,121 @@
+{
+  "formRules": {
+    "required": "Please enter {0}",
+    "selectRequired": "Please select {0}",
+    "minLength": "{0} must be at least {1} characters",
+    "maxLength": "{0} can be at most {1} characters",
+    "length": "{0} must be {1} characters long",
+    "alreadyExists": "{0} `{1}` already exists",
+    "startWith": "{0} must start with `{1}`",
+    "invalidURL": "Please input a valid URL",
+    "sizeLimit": "The file size cannot exceed {0}MB",
+    "previewWarning": "Unable to open the file, there is no available URL or preview address"
+  },
+  "actionTitle": {
+    "edit": "Modify {0}",
+    "create": "Create {0}",
+    "delete": "Delete {0}",
+    "view": "View {0}"
+  },
+  "actionMessage": {
+    "deleteConfirm": "Are you sure to delete {0}?",
+    "deleting": "Deleting {0} ...",
+    "deleteSuccess": "{0} deleted successfully",
+    "operationSuccess": "Operation succeeded",
+    "operationFailed": "Operation failed"
+  },
+  "placeholder": {
+    "input": "Please enter",
+    "select": "Please select",
+    "upload": "Click to upload"
+  },
+  "captcha": {
+    "title": "Please complete the security verification",
+    "sliderSuccessText": "Passed",
+    "sliderDefaultText": "Slider and drag",
+    "alt": "Supports img tag src attribute value",
+    "sliderRotateDefaultTip": "Click picture to refresh",
+    "sliderTranslateDefaultTip": "Click picture to refresh",
+    "sliderRotateFailTip": "Validation failed",
+    "sliderRotateSuccessTip": "Validation successful, time {0} seconds",
+    "sliderTranslateFailTip": "Validation failed",
+    "sliderTranslateSuccessTip": "Validation successful, time {0} seconds",
+    "refreshAriaLabel": "Refresh captcha",
+    "confirmAriaLabel": "Confirm selection",
+    "confirm": "Confirm",
+    "pointAriaLabel": "Click point",
+    "clickInOrder": "Please click in order"
+  },
+  "iconPicker": {
+    "placeholder": "Select an icon",
+    "search": "Search icon..."
+  },
+  "jsonViewer": {
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "crop": {
+    "title": "Image Cropping",
+    "titleTip": "Cropping Ratio {0}",
+    "confirm": "Crop",
+    "cancel": "Cancel cropping",
+    "errorTip": "Cropping error"
+  },
+  "fallback": {
+    "pageNotFound": "Page not found!",
+    "pageNotFoundDesc": "Sorry, we couldn't find the page you requested.",
+    "forbidden": "Access denied!",
+    "forbiddenDesc": "Sorry, you don't have permission to access this page.",
+    "internalError": "Something went wrong!",
+    "internalErrorDesc": "Sorry, the server encountered a technical issue.",
+    "offline": "Offline",
+    "offlineError": "Network error!",
+    "offlineErrorDesc": "Sorry, there is no internet connection. Please check your network.",
+    "comingSoon": "Coming soon",
+    "http": {
+      "requestTimeout": "Request timed out. Please try again later.",
+      "networkError": "Network error. Please check your internet connection.",
+      "badRequest": "Bad request. Please check the input data.",
+      "unauthorized": "Unauthorized. Please login to continue.",
+      "forbidden": "Forbidden. You don't have permission to access this resource.",
+      "notFound": "Not found. The requested resource does not exist.",
+      "internalServerError": "Internal server error. Please try again later."
+    }
+  },
+  "widgets": {
+    "document": "Document",
+    "qa": "Q&A",
+    "setting": "Settings",
+    "logoutTip": "Are you sure you want to logout?",
+    "viewAll": "View all notifications",
+    "notifications": "Notifications",
+    "markAllAsRead": "Mark all as read",
+    "clearNotifications": "Clear all",
+    "checkUpdatesTitle": "New version available",
+    "checkUpdatesDescription": "Click to refresh and load the latest version",
+    "search": {
+      "title": "Search",
+      "searchNavigate": "Navigate",
+      "select": "Select",
+      "navigate": "Go to",
+      "close": "Close",
+      "noResults": "No results",
+      "noRecent": "No recent items",
+      "recent": "Recent searches"
+    },
+    "lockScreen": {
+      "title": "Lock screen",
+      "screenButton": "Locked",
+      "password": "Password",
+      "placeholder": "Please enter password",
+      "unlock": "Click to unlock",
+      "errorPasswordTip": "Incorrect password, please try again",
+      "backToLogin": "Back to login",
+      "entry": "Enter the system"
+    },
+    "timezone": {
+      "setTimezone": "Set timezone",
+      "setSuccess": "Timezone updated"
+    }
+  }
+}

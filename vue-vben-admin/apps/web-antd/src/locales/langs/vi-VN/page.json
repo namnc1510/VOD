@@ -1,0 +1,13 @@
+{
+  "auth": {
+    "authentication": "X\u00e1c th\u1ef1c",
+    "login": "\u0110\u0103ng nh\u1eadp",
+    "codeLogin": "\u0110\u0103ng nh\u1eadp SMS",
+    "qrcodeLogin": "\u0110\u0103ng nh\u1eadp QR",
+    "forgetPassword": "Qu\u00ean m\u1eadt kh\u1ea9u",
+    "register": "\u0110\u0103ng k\u00fd",
+    "profile": "H\u1ed3 s\u01a1 c\u00e1 nh\u00e2n",
+    "sendingCode": "\u0110ang g\u1eedi m\u00e3...",
+    "codeSentTo": "\u0110\u00e3 g\u1eedi m\u00e3 t\u1edbi {0}"
+  }
+}

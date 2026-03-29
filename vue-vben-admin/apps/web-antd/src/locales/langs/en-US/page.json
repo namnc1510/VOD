@@ -1,0 +1,13 @@
+{
+  "auth": {
+    "authentication": "Authentication",
+    "login": "Login",
+    "codeLogin": "SMS Login",
+    "qrcodeLogin": "QR Code Login",
+    "forgetPassword": "Forgot Password",
+    "register": "Register",
+    "profile": "Profile",
+    "sendingCode": "Sending code...",
+    "codeSentTo": "Code sent to {0}"
+  }
+}

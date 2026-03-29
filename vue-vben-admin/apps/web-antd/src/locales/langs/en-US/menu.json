@@ -1,0 +1,34 @@
+{
+  "movies": {
+    "title": "Movies",
+    "library": "Movie Library",
+    "episodes": "Episodes",
+    "taxonomies": "Taxonomies"
+  },
+  "system": {
+    "title": "System",
+    "settings": "Website Settings",
+    "heroSlider": "Homepage Hero Slider"
+  },
+  "users": {
+    "title": "Users",
+    "admin": "Vben Admin Users",
+    "client": "Movie Client Users",
+    "permissions": "Roles & Permissions"
+  },
+  "statistics": {
+    "title": "Analytics",
+    "overview": "Overview"
+  },
+  "comments": {
+    "title": "Comments",
+    "all": "All Comments"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "list": "Transaction List"
+  },
+  "persons": {
+    "title": "Cast & Crew"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "movies": {
+    "title": "Phim",
+    "library": "Th\u01b0 vi\u1ec7n phim",
+    "episodes": "Qu\u1ea3n l\u00fd t\u1eadp phim",
+    "taxonomies": "Danh m\u1ee5c"
+  },
+  "system": {
+    "title": "H\u1ec7 th\u1ed1ng",
+    "settings": "C\u1ea5u h\u00ecnh website",
+    "heroSlider": "Hero slider trang ch\u1ee7"
+  },
+  "users": {
+    "title": "Ng\u01b0\u1eddi d\u00f9ng",
+    "admin": "Quản lý Vben Admin",
+    "client": "Quản lý Movie Client",
+    "permissions": "Vai tr\u00f2 & quy\u1ec1n"
+  },
+  "statistics": {
+    "title": "Th\u1ed1ng k\u00ea",
+    "overview": "Th\u1ed1ng k\u00ea chi ti\u1ebft"
+  },
+  "comments": {
+    "title": "Bình luận",
+    "all": "Tất cả bình luận"
+  },
+  "transactions": {
+    "title": "Giao dịch",
+    "list": "Danh sách giao dịch"
+  },
+  "persons": {
+    "title": "Diễn viên & Đạo diễn"
+  }
+}

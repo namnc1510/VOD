@@ -1,0 +1,14 @@
+{
+  "title": "Tr\u00ecnh di\u1ec5n",
+  "antd": "Ant Design Vue",
+  "vben": {
+    "title": "D\u1ef1 \u00e1n",
+    "about": "Gi\u1edbi thi\u1ec7u",
+    "document": "T\u00e0i li\u1ec7u",
+    "antdv": "Phi\u00ean b\u1ea3n Ant Design Vue",
+    "antdv-next": "Phi\u00ean b\u1ea3n Antdv Next",
+    "naive-ui": "Phi\u00ean b\u1ea3n Naive UI",
+    "element-plus": "Phi\u00ean b\u1ea3n Element Plus",
+    "tdesign": "Phi\u00ean b\u1ea3n TDesign Vue"
+  }
+}

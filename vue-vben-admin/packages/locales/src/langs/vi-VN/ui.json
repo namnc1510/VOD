@@ -1,0 +1,121 @@
+{
+  "formRules": {
+    "required": "Vui l\u00f2ng nh\u1eadp {0}",
+    "selectRequired": "Vui l\u00f2ng ch\u1ecdn {0}",
+    "minLength": "{0} t\u1ed1i thi\u1ec3u {1} k\u00fd t\u1ef1",
+    "maxLength": "{0} t\u1ed1i \u0111a {1} k\u00fd t\u1ef1",
+    "length": "{0} ph\u1ea3i d\u00e0i {1} k\u00fd t\u1ef1",
+    "alreadyExists": "{0} `{1}` \u0111\u00e3 t\u1ed3n t\u1ea1i",
+    "startWith": "{0} ph\u1ea3i b\u1eaft \u0111\u1ea7u b\u1eb1ng `{1}`",
+    "invalidURL": "Vui l\u00f2ng nh\u1eadp URL h\u1ee3p l\u1ec7",
+    "sizeLimit": "K\u00edch th\u01b0\u1edbc file kh\u00f4ng v\u01b0\u1ee3t qu\u00e1 {0}MB",
+    "previewWarning": "Kh\u00f4ng th\u1ec3 m\u1edf file: kh\u00f4ng c\u00f3 URL/preview"
+  },
+  "actionTitle": {
+    "edit": "S\u1eeda {0}",
+    "create": "T\u1ea1o {0}",
+    "delete": "X\u00f3a {0}",
+    "view": "Xem {0}"
+  },
+  "actionMessage": {
+    "deleteConfirm": "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n x\u00f3a {0}?",
+    "deleting": "\u0110ang x\u00f3a {0} ...",
+    "deleteSuccess": "\u0110\u00e3 x\u00f3a {0}",
+    "operationSuccess": "Thao t\u00e1c th\u00e0nh c\u00f4ng",
+    "operationFailed": "Thao t\u00e1c th\u1ea5t b\u1ea1i"
+  },
+  "placeholder": {
+    "input": "Vui l\u00f2ng nh\u1eadp",
+    "select": "Vui l\u00f2ng ch\u1ecdn",
+    "upload": "B\u1ea5m \u0111\u1ec3 t\u1ea3i l\u00ean"
+  },
+  "captcha": {
+    "title": "Vui l\u00f2ng ho\u00e0n th\u00e0nh x\u00e1c minh",
+    "sliderSuccessText": "\u0110\u00e3 xong",
+    "sliderDefaultText": "K\u00e9o thanh tr\u01b0\u1ee3t",
+    "alt": "H\u1ed7 tr\u1ee3 gi\u00e1 tr\u1ecb src cho th\u1ebb img",
+    "sliderRotateDefaultTip": "B\u1ea5m \u1ea3nh \u0111\u1ec3 l\u00e0m m\u1edbi",
+    "sliderTranslateDefaultTip": "B\u1ea5m \u1ea3nh \u0111\u1ec3 l\u00e0m m\u1edbi",
+    "sliderRotateFailTip": "X\u00e1c minh th\u1ea5t b\u1ea1i",
+    "sliderRotateSuccessTip": "X\u00e1c minh th\u00e0nh c\u00f4ng, th\u1eddi gian {0} gi\u00e2y",
+    "sliderTranslateFailTip": "X\u00e1c minh th\u1ea5t b\u1ea1i",
+    "sliderTranslateSuccessTip": "X\u00e1c minh th\u00e0nh c\u00f4ng, th\u1eddi gian {0} gi\u00e2y",
+    "refreshAriaLabel": "L\u00e0m m\u1edbi captcha",
+    "confirmAriaLabel": "X\u00e1c nh\u1eadn",
+    "confirm": "X\u00e1c nh\u1eadn",
+    "pointAriaLabel": "B\u1ea5m ch\u1ecdn",
+    "clickInOrder": "Vui l\u00f2ng b\u1ea5m theo th\u1ee9 t\u1ef1"
+  },
+  "iconPicker": {
+    "placeholder": "Ch\u1ecdn icon",
+    "search": "T\u00ecm icon..."
+  },
+  "jsonViewer": {
+    "copy": "Sao ch\u00e9p",
+    "copied": "\u0110\u00e3 sao ch\u00e9p"
+  },
+  "crop": {
+    "title": "C\u1eaft \u1ea3nh",
+    "titleTip": "T\u1ef7 l\u1ec7 c\u1eaft {0}",
+    "confirm": "C\u1eaft",
+    "cancel": "H\u1ee7y c\u1eaft",
+    "errorTip": "L\u1ed7i c\u1eaft \u1ea3nh"
+  },
+  "fallback": {
+    "pageNotFound": "Kh\u00f4ng t\u00ecm th\u1ea5y trang!",
+    "pageNotFoundDesc": "Xin l\u1ed7i, kh\u00f4ng th\u1ec3 t\u00ecm th\u1ea5y trang b\u1ea1n y\u00eau c\u1ea7u.",
+    "forbidden": "Truy c\u1eadp b\u1ecb t\u1eeb ch\u1ed1i!",
+    "forbiddenDesc": "Xin l\u1ed7i, b\u1ea1n kh\u00f4ng c\u00f3 quy\u1ec1n truy c\u1eadp trang n\u00e0y.",
+    "internalError": "\u0110\u00e3 c\u00f3 l\u1ed7i x\u1ea3y ra!",
+    "internalErrorDesc": "Xin l\u1ed7i, m\u00e1y ch\u1ee7 \u0111ang g\u1eb7p tr\u1ee5c tr\u1eb7c k\u1ef9 thu\u1eadt.",
+    "offline": "\u0110ang ngo\u1ea1i tuy\u1ebfn",
+    "offlineError": "L\u1ed7i k\u1ebft n\u1ed1i m\u1ea1ng!",
+    "offlineErrorDesc": "Xin l\u1ed7i, kh\u00f4ng c\u00f3 k\u1ebft n\u1ed1i internet. Vui l\u00f2ng ki\u1ec3m tra l\u1ea1i m\u1ea1ng.",
+    "comingSoon": "S\u1eafp ra m\u1eaft",
+    "http": {
+      "requestTimeout": "Y\u00eau c\u1ea7u \u0111\u00e3 h\u1ebft h\u1ea1n. Vui l\u00f2ng th\u1eed l\u1ea1i sau.",
+      "networkError": "L\u1ed7i m\u1ea1ng. Vui l\u00f2ng ki\u1ec3m tra k\u1ebft n\u1ed1i internet.",
+      "badRequest": "Y\u00eau c\u1ea7u kh\u00f4ng h\u1ee3p l\u1ec7. Vui l\u00f2ng ki\u1ec3m tra d\u1eef li\u1ec7u nh\u1eadp.",
+      "unauthorized": "Ch\u01b0a x\u00e1c th\u1ef1c. Vui l\u00f2ng \u0111\u0103ng nh\u1eadp \u0111\u1ec3 ti\u1ebfp t\u1ee5c.",
+      "forbidden": "B\u1ecb c\u1ea5m. B\u1ea1n kh\u00f4ng c\u00f3 quy\u1ec1n truy c\u1eadp t\u00e0i nguy\u00ean n\u00e0y.",
+      "notFound": "Kh\u00f4ng t\u00ecm th\u1ea5y. T\u00e0i nguy\u00ean y\u00eau c\u1ea7u kh\u00f4ng t\u1ed3n t\u1ea1i.",
+      "internalServerError": "L\u1ed7i m\u00e1y ch\u1ee7 n\u1ed9i b\u1ed9. Vui l\u00f2ng th\u1eed l\u1ea1i sau."
+    }
+  },
+  "widgets": {
+    "document": "T\u00e0i li\u1ec7u",
+    "qa": "H\u1ecfi \u0111\u00e1p",
+    "setting": "C\u00e0i \u0111\u1eb7t",
+    "logoutTip": "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n \u0111\u0103ng xu\u1ea5t?",
+    "viewAll": "Xem t\u1ea5t c\u1ea3 th\u00f4ng b\u00e1o",
+    "notifications": "Th\u00f4ng b\u00e1o",
+    "markAllAsRead": "\u0110\u00e1nh d\u1ea5u t\u1ea5t c\u1ea3 \u0111\u00e3 \u0111\u1ecdc",
+    "clearNotifications": "X\u00f3a t\u1ea5t c\u1ea3",
+    "checkUpdatesTitle": "\u0110\u00e3 c\u00f3 phi\u00ean b\u1ea3n m\u1edbi",
+    "checkUpdatesDescription": "B\u1ea5m \u0111\u1ec3 l\u00e0m m\u1edbi v\u00e0 t\u1ea3i b\u1ea3n m\u1edbi nh\u1ea5t",
+    "search": {
+      "title": "T\u00ecm ki\u1ebfm",
+      "searchNavigate": "\u0110i\u1ec1u h\u01b0\u1edbng",
+      "select": "Ch\u1ecdn",
+      "navigate": "\u0110i t\u1edbi",
+      "close": "\u0110\u00f3ng",
+      "noResults": "Kh\u00f4ng t\u00ecm th\u1ea5y k\u1ebft qu\u1ea3",
+      "noRecent": "Kh\u00f4ng c\u00f3 l\u1ecbch s\u1eed",
+      "recent": "L\u1ecbch s\u1eed t\u00ecm ki\u1ebfm"
+    },
+    "lockScreen": {
+      "title": "Kh\u00f3a m\u00e0n h\u00ecnh",
+      "screenButton": "\u0110ang kh\u00f3a",
+      "password": "M\u1eadt kh\u1ea9u",
+      "placeholder": "Vui l\u00f2ng nh\u1eadp m\u1eadt kh\u1ea9u",
+      "unlock": "B\u1ea5m \u0111\u1ec3 m\u1edf kh\u00f3a",
+      "errorPasswordTip": "Sai m\u1eadt kh\u1ea9u, vui l\u00f2ng th\u1eed l\u1ea1i",
+      "backToLogin": "Tr\u1edf l\u1ea1i \u0111\u0103ng nh\u1eadp",
+      "entry": "Truy c\u1eadp h\u1ec7 th\u1ed1ng"
+    },
+    "timezone": {
+      "setTimezone": "Thi\u1ebft l\u1eadp m\u00fai gi\u1edd",
+      "setSuccess": "\u0110\u1eb7t m\u00fai gi\u1edd th\u00e0nh c\u00f4ng"
+    }
+  }
+}

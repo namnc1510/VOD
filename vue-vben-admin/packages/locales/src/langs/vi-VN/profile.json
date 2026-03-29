@@ -1,0 +1,69 @@
+{
+  "updatePassword": "\u0110\u1ed5i m\u1eadt kh\u1ea9u",
+  "updateBasicProfile": "C\u1eadp nh\u1eadt th\u00f4ng tin",
+  "centerTitle": "H\u1ed3 s\u01a1 c\u00e1 nh\u00e2n",
+  "tabs": {
+    "basic": "C\u01a1 b\u1ea3n",
+    "security": "B\u1ea3o m\u1eadt",
+    "password": "\u0110\u1ed5i m\u1eadt kh\u1ea9u",
+    "notice": "Th\u00f4ng b\u00e1o"
+  },
+  "base": {
+    "realName": "H\u1ecd v\u00e0 t\u00ean",
+    "username": "T\u00ean \u0111\u0103ng nh\u1eadp",
+    "roles": "Vai tr\u00f2",
+    "introduction": "Gi\u1edbi thi\u1ec7u",
+    "roleOptions": {
+      "admin": "Qu\u1ea3n tr\u1ecb vi\u00ean",
+      "user": "Ng\u01b0\u1eddi d\u00f9ng",
+      "test": "Ki\u1ec3m th\u1eed"
+    }
+  },
+  "security": {
+    "accountPassword": {
+      "label": "T\u00e0i kho\u1ea3n & m\u1eadt kh\u1ea9u",
+      "description": "\u0110\u1ed9 m\u1ea1nh m\u1eadt kh\u1ea9u hi\u1ec7n t\u1ea1i: M\u1ea1nh"
+    },
+    "securityPhone": {
+      "label": "S\u1ed1 \u0111i\u1ec7n tho\u1ea1i b\u1ea3o m\u1eadt",
+      "description": "\u0110\u00e3 li\u00ean k\u1ebft: 138****8293"
+    },
+    "securityQuestion": {
+      "label": "C\u00e2u h\u1ecfi b\u1ea3o m\u1eadt",
+      "description": "Ch\u01b0a thi\u1ebft l\u1eadp c\u00e2u h\u1ecfi b\u1ea3o m\u1eadt. Thi\u1ebft l\u1eadp \u0111\u1ec3 t\u0103ng c\u01b0\u1eddng an to\u00e0n t\u00e0i kho\u1ea3n."
+    },
+    "securityEmail": {
+      "label": "Email d\u1ef1 ph\u00f2ng",
+      "description": "\u0110\u00e3 li\u00ean k\u1ebft: ant***sign.com"
+    },
+    "securityMfa": {
+      "label": "Thi\u1ebft b\u1ecb MFA",
+      "description": "Ch\u01b0a li\u00ean k\u1ebft MFA. Sau khi li\u00ean k\u1ebft, b\u1ea1n c\u00f3 th\u1ec3 b\u1eadt x\u00e1c th\u1ef1c 2 l\u1edbp."
+    }
+  },
+  "notifications": {
+    "accountPassword": {
+      "label": "T\u00e0i kho\u1ea3n & m\u1eadt kh\u1ea9u",
+      "description": "Th\u00f4ng b\u00e1o t\u1eeb ng\u01b0\u1eddi d\u00f9ng kh\u00e1c s\u1ebd g\u1eedi b\u1eb1ng tin nh\u1eafn trong h\u1ec7 th\u1ed1ng."
+    },
+    "systemMessage": {
+      "label": "Tin nh\u1eafn h\u1ec7 th\u1ed1ng",
+      "description": "Th\u00f4ng b\u00e1o h\u1ec7 th\u1ed1ng s\u1ebd g\u1eedi b\u1eb1ng tin nh\u1eafn trong h\u1ec7 th\u1ed1ng."
+    },
+    "todoTask": {
+      "label": "C\u00f4ng vi\u1ec7c c\u1ea7n l\u00e0m",
+      "description": "Nh\u1eafc nh\u1edf c\u00f4ng vi\u1ec7c s\u1ebd g\u1eedi b\u1eb1ng tin nh\u1eafn trong h\u1ec7 th\u1ed1ng."
+    }
+  },
+  "password": {
+    "oldPasswordLabel": "M\u1eadt kh\u1ea9u c\u0169",
+    "oldPasswordPlaceholder": "Vui l\u00f2ng nh\u1eadp m\u1eadt kh\u1ea9u c\u0169",
+    "newPasswordLabel": "M\u1eadt kh\u1ea9u m\u1edbi",
+    "newPasswordPlaceholder": "Vui l\u00f2ng nh\u1eadp m\u1eadt kh\u1ea9u m\u1edbi",
+    "confirmPasswordLabel": "X\u00e1c nh\u1eadn m\u1eadt kh\u1ea9u",
+    "confirmPasswordPlaceholder": "Vui l\u00f2ng nh\u1eadp l\u1ea1i m\u1eadt kh\u1ea9u m\u1edbi",
+    "confirmPasswordRequired": "Vui l\u00f2ng nh\u1eadp l\u1ea1i m\u1eadt kh\u1ea9u m\u1edbi",
+    "mismatch": "Hai l\u1ea7n nh\u1eadp m\u1eadt kh\u1ea9u kh\u00f4ng kh\u1edbp",
+    "success": "\u0110\u1ed5i m\u1eadt kh\u1ea9u th\u00e0nh c\u00f4ng"
+  }
+}

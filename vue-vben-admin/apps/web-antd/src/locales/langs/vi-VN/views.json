@@ -1,0 +1,761 @@
+{
+  "taxonomies": {
+    "title": "Quản lý danh mục",
+    "subtitle": "Quốc gia, thể loại, chất lượng, định dạng",
+    "tabs": {
+      "category": "Thể loại",
+      "country": "Quốc gia",
+      "format": "Định dạng (Type)",
+      "quality": "Chất lượng (Quality)"
+    },
+    "actions": {
+      "create": "Tạo mới",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "table": {
+      "id": "ID",
+      "name": "Tên",
+      "slug": "Slug",
+      "description": "Mô tả",
+      "actions": "Thao tác",
+      "empty": "Chưa có dữ liệu."
+    },
+    "modal": {
+      "editTitle": "Sửa danh mục",
+      "createTitle": "Thêm mới",
+      "nameLabel": "Tên",
+      "namePlaceholder": "Ví dụ: Hành động, Hàn Quốc...",
+      "slugLabel": "Slug",
+      "slugPlaceholder": "hanh-dong",
+      "descriptionLabel": "Mô tả (tùy chọn)"
+    },
+    "messages": {
+      "loadFailed": "Không tải được danh mục. Vui lòng thử lại.",
+      "saved": "Đã lưu danh mục.",
+      "saveFailed": "Lưu danh mục thất bại.",
+      "deleteConfirm": "Bạn có chắc muốn xóa bản ghi này?",
+      "deleted": "Đã xóa.",
+      "deleteFailed": "Xóa thất bại."
+    }
+  },
+  "statistics": {
+    "title": "Thống kê nền tảng",
+    "subtitle": "Tổng quan hiệu năng: lượt xem, đăng ký, gói dịch vụ và nội dung nổi bật.",
+    "ranges": {
+      "today": "Hôm nay",
+      "todayHint": "00:00 - hiện tại",
+      "7d": "7 ngày",
+      "7dHint": "7 ngày gần nhất",
+      "30d": "30 ngày",
+      "30dHint": "30 ngày gần nhất",
+      "custom": "Tùy chọn"
+    },
+    "actions": {
+      "customRange": "Tùy chọn",
+      "apply": "Áp dụng",
+      "cancel": "Hủy",
+      "downloadReport": "Tải báo cáo",
+      "exportCsv": "Xuất CSV",
+      "retry": "Thử lại"
+    },
+    "messages": {
+      "loadFailed": "Không tải được số liệu thống kê.",
+      "selectRangeRequired": "Vui lòng chọn khoảng thời gian.",
+      "unauthorized": "Vui lòng đăng nhập để xem thống kê.",
+      "forbidden": "Bạn không có quyền xem thống kê."
+    },
+    "kpis": {
+      "views": "Tổng lượt xem",
+      "movies": "Tổng phim",
+      "users": "Tổng người dùng",
+      "comments": "Tổng bình luận",
+      "watchlist": "Hoạt động xem",
+      "categories": "Danh mục",
+      "byRange": "Theo {range}"
+    },
+    "sections": {
+      "topMovies": "Top phim",
+      "topGenres": "Top thể loại",
+      "topCountries": "Lượt xem theo quốc gia",
+      "topCountriesDesc": "Phân bố người xem theo khu vực",
+      "engagement": "Tương tác",
+      "engagementDesc": "Người xem hoạt động, tỷ lệ xem hết và độ sâu xem.",
+      "funnel": "Phễu",
+      "funnelDesc": "Góc nhìn chuyển đổi từ đăng ký đến xem hết.",
+      "alerts": "Cảnh báo",
+      "alertsDesc": "Những mục cần chú ý."
+    },
+    "charts": {
+      "viewershipTrends": "Xu hướng lượt xem",
+      "currentPeriod": "Giai đoạn hiện tại",
+      "previous": "Trước đó",
+      "noData": "Chưa có dữ liệu",
+      "planDistribution": "Phân bổ gói",
+      "premiumShare": "Tỷ lệ Premium",
+      "premiumPlan": "Premium",
+      "freePlan": "Miễn phí",
+      "deviceDistribution": "Phân bổ thiết bị",
+      "device": {
+        "mobile": "Mobile",
+        "desktop": "Desktop",
+        "tv": "Smart TV",
+        "unknown": "Không rõ"
+      },
+      "viewsByDevice": "Lượt xem theo thiết bị",
+      "mobileAvg": "TB mobile",
+      "smartTv": "Smart TV",
+      "mobile": "Mobile",
+      "desktop": "Desktop",
+      "others": "Khác"
+    },
+    "rankings": {
+      "topContent": "Top nội dung",
+      "topGenres": "Top thể loại",
+      "topGrowing": "Tăng trưởng nhanh",
+      "viewMore": "Xem thêm",
+      "byViewsIn": "Theo lượt xem trong {range}",
+      "byMovieCount": "Theo số lượng phim",
+      "byGrowthIn": "Theo tăng trưởng trong {range}"
+    },
+    "engagement": {
+      "activeViewers": "Người xem hoạt động",
+      "completionRate": "Tỷ lệ xem hết",
+      "avgProgress": "TB thời lượng xem",
+      "medianProgress": "Trung vị thời lượng"
+    },
+    "funnel": {
+      "signups": "Đăng ký",
+      "watchActivities": "Hoạt động xem",
+      "completions": "Xem hết",
+      "signupToWatch": "Đăng ký → Xem",
+      "watchToComplete": "Xem → Xem hết"
+    },
+    "alerts": {
+      "hiddenContent": "Hoạt động xem trên nội dung ẩn/đã xóa"
+    },
+    "meta": {
+      "viewsDot": "Lượt xem • {views}",
+      "unknown": "Không rõ",
+      "moviesCount": "{count} phim",
+      "viewsCount": "{count} lượt xem",
+      "watchActivities": "Hoạt động",
+      "minutes": "phút",
+      "rangeSummary": "{from} → {to} · {days} ngày · {tz}",
+      "growthMeta": "Hiện {current} · Trước {previous}",
+      "deltaLabel": "Tăng"
+    },
+    "customRange": {
+      "title": "Chọn khoảng thời gian",
+      "subtitle": "Áp dụng cho thống kê (Users, Movies, Comments, Views).",
+      "hint": "Mẹo: Ngày kết thúc được tính \"bao gồm\" (hệ thống sẽ gửi `to` theo dạng exclusive)."
+    }
+  },
+  "comments": {
+    "title": "Quản lý bình luận",
+    "badge": "Kiểm duyệt",
+    "stats": {
+      "total": "Tổng bình luận",
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "spam": "Spam"
+    },
+    "status": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "spam": "Spam"
+    },
+    "filters": {
+      "searchPlaceholder": "Tìm theo nội dung...",
+      "all": "Tất cả",
+      "perPage": "{count} / trang"
+    },
+    "table": {
+      "user": "Người dùng",
+      "movie": "Phim",
+      "content": "Nội dung",
+      "time": "Thời gian",
+      "status": "Trạng thái",
+      "actions": "Thao tác",
+      "unknownUser": "Không rõ",
+      "na": "N/A",
+      "hiddenNote": "Đang ẩn",
+      "empty": "Không có bình luận."
+    },
+    "actions": {
+      "approve": "Duyệt",
+      "markSpam": "Đánh dấu spam",
+      "notSpam": "Không phải spam",
+      "reply": "Phản hồi",
+      "delete": "Xóa",
+      "deleteForever": "Xóa vĩnh viễn",
+      "hide": "Ẩn",
+      "show": "Hiện"
+    },
+    "messages": {
+      "loadFailed": "Không tải được danh sách bình luận.",
+      "statusUpdated": "Đã cập nhật trạng thái.",
+      "statusUpdateFailed": "Cập nhật trạng thái thất bại.",
+      "shown": "Đã hiện bình luận.",
+      "hidden": "Đã ẩn bình luận.",
+      "toggleHiddenFailed": "Không cập nhật được trạng thái ẩn/hiện.",
+      "deleteConfirm": "Xóa bình luận này?",
+      "deletePermanentConfirm": "Xóa vĩnh viễn bình luận này?",
+      "deleted": "Đã xóa.",
+      "deletedPermanent": "Đã xóa vĩnh viễn.",
+      "deleteFailed": "Xóa bình luận thất bại.",
+      "replyNotSupported": "Chức năng phản hồi chưa hỗ trợ."
+    },
+    "pagination": {
+      "showing": "Hiển thị {from} - {to} trong {total} kết quả"
+    }
+  },
+  "users": {
+    "title": "Quản lý người dùng",
+    "subtitle": "Quản lý tài khoản hệ thống, vai trò và trạng thái người dùng.",
+    "actions": {
+      "create": "Thêm người dùng",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "refresh": "Làm mới",
+      "cancel": "Hủy",
+      "save": "Lưu"
+    },
+    "filters": {
+      "searchPlaceholder": "Tìm theo tên hoặc email...",
+      "allRoles": "Tất cả vai trò",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "perPage": "{count} / trang"
+    },
+    "table": {
+      "id": "ID",
+      "user": "Người dùng",
+      "role": "Vai trò",
+      "status": "Trạng thái",
+      "lastLogin": "Lần đăng nhập",
+      "actions": "Thao tác",
+      "empty": "Không tìm thấy người dùng.",
+      "anonymous": "Người dùng ẩn danh",
+      "active": "Đang hoạt động",
+      "na": "N/A"
+    },
+    "messages": {
+      "loadFailed": "Không tải được danh sách người dùng.",
+      "saved": "Đã lưu người dùng.",
+      "saveFailed": "Lưu người dùng thất bại.",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa người dùng này? Thao tác này không thể hoàn tác.",
+      "deleted": "Đã xóa người dùng.",
+      "deleteFailed": "Xóa người dùng thất bại."
+    },
+    "pagination": {
+      "showing": "Đang hiển thị {from} - {to} trong số {total} tài khoản",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "modal": {
+      "editTitle": "Chỉnh sửa tài khoản",
+      "createTitle": "Tạo mới tài khoản",
+      "nameLabel": "Tên hiển thị",
+      "emailLabel": "Email liên hệ",
+      "emailLockedHint": "Không thể thay đổi email sau khi tạo.",
+      "roleLabel": "Vai trò hệ thống"
+    },
+    "clientTitle": "Quản lý Movie Client"
+  },
+  "permissions": {
+    "title": "Vai trò & quyền",
+    "subtitle": "Quản lý phân quyền theo role bằng access codes.",
+    "actions": {
+      "discard": "Hoàn tác",
+      "save": "Lưu thay đổi"
+    },
+    "roles": {
+      "admin": {
+        "label": "Quản trị viên",
+        "desc": "Toàn quyền quản trị hệ thống."
+      },
+      "editor": {
+        "label": "Biên tập",
+        "desc": "Quản lý nội dung phim và danh mục."
+      },
+      "moderator": {
+        "label": "Kiểm duyệt",
+        "desc": "Duyệt và kiểm soát bình luận."
+      },
+      "user": {
+        "label": "Người dùng",
+        "desc": "Tài khoản người dùng thông thường."
+      }
+    },
+    "status": {
+      "active": "Đang chọn",
+      "unsaved": "Bạn có thay đổi chưa lưu."
+    },
+    "matrix": {
+      "title": "Ma trận quyền: {role}",
+      "subtitle": "Tick quyền cho từng module.",
+      "availableRoles": "Vai trò hiện có",
+      "selectAll": "Chọn tất cả",
+      "deselectAll": "Bỏ chọn tất cả"
+    },
+    "table": {
+      "module": "Module / Mục",
+      "view": "Xem",
+      "create": "Tạo",
+      "edit": "Sửa",
+      "delete": "Xóa"
+    },
+    "modules": {
+      "movies": "Phim",
+      "comments": "Bình luận",
+      "taxonomies": "Danh mục",
+      "users": "Người dùng",
+      "analytics": "Thống kê",
+      "settings": "Hệ thống"
+    },
+    "advanced": {
+      "title": "Quyền nâng cao",
+      "bypassMaintenance": {
+        "title": "Bỏ qua chế độ bảo trì",
+        "desc": "Cho phép truy cập kể cả khi hệ thống bảo trì."
+      },
+      "apiKeys": {
+        "title": "Tạo API key",
+        "desc": "Quản lý công cụ developer và token hệ thống."
+      },
+      "viewLogs": {
+        "title": "Xem log hệ thống",
+        "desc": "Xem log và audit hành động quản trị."
+      },
+      "dbBackup": {
+        "title": "Sao lưu CSDL",
+        "desc": "Tạo snapshot/backup thủ công."
+      }
+    },
+    "messages": {
+      "loadFailed": "Không tải được cấu hình phân quyền.",
+      "discarded": "Đã hoàn tác thay đổi (chưa lưu).",
+      "saved": "Đã lưu phân quyền.",
+      "saveFailed": "Lưu phân quyền thất bại."
+    }
+  },
+  "homeHero": {
+    "title": "Hero slider trang chủ",
+    "subtitle": "Chọn danh sách phim hiển thị ở banner đầu trang (client).",
+    "actions": {
+      "save": "Lưu",
+      "saving": "Đang lưu...",
+      "search": "Tìm kiếm",
+      "add": "Thêm"
+    },
+    "sections": {
+      "selected": "Danh sách đã chọn",
+      "addMovies": "Thêm phim"
+    },
+    "fields": {
+      "limitLabel": "Giới hạn slide",
+      "limitHint": "Nếu danh sách chọn ít hơn limit, có thể tự fill bằng phim nhiều lượt xem.",
+      "autofillLabel": "Tự điền",
+      "autofillHint": "Tự thêm phim top views khi thiếu slides hoặc phim bị ẩn.",
+      "autoPlayLabel": "Tự động cuộn Slider",
+      "autoPlayHint": "Tự động chuyển tiếp các hình ảnh lớn trên băng chuyền.",
+      "intervalLabel": "Tốc độ cuộn (giây)",
+      "searchPlaceholder": "Tìm theo tiêu đề..."
+    },
+    "messages": {
+      "loadFailed": "Không tải được cấu hình Hero slider.",
+      "loadSelectedFailed": "Không tải được danh sách phim đã chọn.",
+      "maxMovies": "Tối đa 30 phim trong slider.",
+      "searchFailed": "Tìm kiếm phim thất bại.",
+      "saved": "Đã lưu cấu hình Hero slider.",
+      "saveFailed": "Lưu cấu hình thất bại.",
+      "notFound": "(Không tìm thấy phim)",
+      "emptySelected": "Chưa chọn phim nào. Tìm kiếm bên phải để thêm vào slider.",
+      "emptySearch": "Nhập từ khóa để tìm phim và thêm vào slider."
+    },
+    "meta": {
+      "views": "Lượt xem",
+      "imdb": "IMDB",
+      "na": "N/A"
+    },
+    "aria": {
+      "moveUp": "Đưa lên",
+      "moveDown": "Đưa xuống",
+      "remove": "Xóa"
+    }
+  },
+  "episodes": {
+    "title": "Quản lý tập phim",
+    "subtitle": "Quản lý tập phim, link video, trạng thái hiển thị (ẩn để không hiện bên client).",
+    "actions": {
+      "add": "Thêm tập",
+      "filter": "Lọc",
+      "showDeleted": "Hiện đã xóa",
+      "undo": "Hoàn tác",
+      "restore": "Khôi phục",
+      "toggleHidden": "Ẩn/Hiện bên client",
+      "preview": "Xem thử",
+      "edit": "Sửa",
+      "delete": "Xóa"
+    },
+    "filters": {
+      "currentMovie": "Phim hiện tại",
+      "allMovies": "Tất cả phim",
+      "status": "Trạng thái",
+      "allStatus": "Tất cả",
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo tiêu đề..."
+    },
+    "status": {
+      "published": "Đã phát",
+      "draft": "Nháp",
+      "scheduled": "Hẹn giờ",
+      "hidden": "Ẩn",
+      "unknown": "Không rõ"
+    },
+    "table": {
+      "id": "ID",
+      "epNo": "Số tập",
+      "title": "Tiêu đề",
+      "duration": "Thời lượng",
+      "status": "Trạng thái",
+      "videoUrl": "Video URL",
+      "actions": "Thao tác",
+      "notSet": "Chưa có",
+      "loading": "Đang tải...",
+      "empty": "Không có tập phim."
+    },
+    "messages": {
+      "videoUploadSuccess": "Tải video thành công.",
+      "videoUploadFailed": "Tải video thất bại.",
+      "movieRequired": "Vui lòng chọn phim.",
+      "titleRequired": "Vui lòng nhập tiêu đề tập.",
+      "epNoInvalid": "Số tập không hợp lệ.",
+      "updated": "Cập nhật tập phim thành công.",
+      "created": "Tạo tập phim thành công.",
+      "saveFailed": "Lưu tập phim thất bại.",
+      "deleteConfirm": "Xóa tập \"{title}\"?",
+      "deletedPrefix": "Đã xóa:",
+      "deletedUndo": "Đã xóa tập. Bạn có thể hoàn tác trong 12 giây.",
+      "deleteFailed": "Xóa tập phim thất bại.",
+      "undoSuccess": "Đã hoàn tác.",
+      "undoFailed": "Hoàn tác thất bại.",
+      "restored": "Đã khôi phục.",
+      "restoreFailed": "Khôi phục thất bại.",
+      "toggleFailed": "Không cập nhật được trạng thái."
+    },
+    "pagination": {
+      "summary": "Tổng: {total} tập • Trang {page} / {pages}"
+    },
+    "modal": {
+      "editTitle": "Cập nhật tập",
+      "createTitle": "Thêm tập mới",
+      "uploadHint": "Có thể tải mp4 lên server để lấy URL.",
+      "movieLabel": "Phim",
+      "moviePlaceholder": "Chọn phim",
+      "epNoLabel": "Số tập",
+      "titleLabel": "Tiêu đề",
+      "titlePlaceholder": "Ví dụ: Tập 1 - Khởi đầu",
+      "durationLabel": "Thời lượng (giây)",
+      "statusLabel": "Trạng thái",
+      "airDateLabel": "Ngày phát (tùy chọn)",
+      "videoUrlLabel": "Video URL",
+      "videoUrlPlaceholder": "https://... hoặc /uploads/...",
+      "uploading": "Đang tải...",
+      "uploadMp4": "Tải mp4",
+      "overviewLabel": "Mô tả (tùy chọn)",
+      "cancel": "Hủy",
+      "save": "Lưu",
+      "saving": "Đang lưu..."
+    }
+  },
+  "settings": {
+    "breadcrumbs": {
+      "dashboard": "Bảng điều khiển",
+      "system": "Hệ thống",
+      "settings": "Cấu hình"
+    },
+    "title": "Cấu hình website",
+    "subtitle": "Quản lý tập trung cấu hình chung, streaming và SEO.",
+    "actions": {
+      "reset": "Hoàn tác thay đổi",
+      "save": "Lưu thay đổi",
+      "discard": "Bỏ qua",
+      "saveAll": "Lưu tất cả cấu hình"
+    },
+    "tabs": {
+      "general": "Cấu hình chung",
+      "streaming": "Streaming & CDN",
+      "seo": "Cấu hình SEO",
+      "ui": "Cấu hình giao diện"
+    },
+    "general": {
+      "title": "Thông tin chung",
+      "siteName": "Tên website",
+      "siteNameHint": "Tiêu đề cổng phim hiển thị với người dùng.",
+      "timezone": "Múi giờ mặc định",
+      "description": "Mô tả website",
+      "logo": "Logo",
+      "uploadLogo": "Tải logo mới",
+      "logoHint": "SVG, PNG hoặc JPG (tối đa 2MB)",
+      "favicon": "Favicon",
+      "changeFavicon": "Đổi favicon",
+      "faviconHint": "ICO hoặc PNG (khuyến nghị 32x32px)"
+    },
+    "ui": {
+      "title": "Cấu hình giao diện",
+      "darkMode": "Chế độ tối",
+      "darkModeHint": "Bật dark mode cho toàn hệ thống",
+      "primaryColor": "Màu chủ đạo",
+      "primaryColorHint": "Chọn màu nhấn thương hiệu",
+      "layout": "Kiểu layout",
+      "sideNav": "Menu bên",
+      "topNav": "Menu trên"
+    },
+    "seo": {
+      "title": "SEO & Marketing",
+      "metaTitle": "Meta title",
+      "metaTitlePlaceholder": "Meta title chung",
+      "gaId": "Google Analytics ID",
+      "copyGaId": "Copy GA ID",
+      "keywords": "Từ khóa (ngăn cách bằng dấu phẩy)",
+      "keywordPlaceholder": "Nhập tag và nhấn Enter..."
+    },
+    "streaming": {
+      "title": "Streaming & CDN",
+      "cdnBaseUrl": "CDN Base URL",
+      "cdnHint": "Dùng khi bạn muốn trỏ tài nguyên tĩnh/video qua CDN."
+    },
+    "status": {
+      "unsaved": "Bạn có thay đổi chưa lưu."
+    },
+    "labels": {
+      "uploading": "Đang tải..."
+    },
+    "messages": {
+      "loadFailed": "Không tải được cấu hình. Vui lòng thử lại.",
+      "saved": "Đã lưu cấu hình.",
+      "saveFailed": "Lưu cấu hình thất bại.",
+      "discarded": "Đã hoàn tác thay đổi (chưa lưu).",
+      "maxKeywords": "Tối đa 50 từ khóa.",
+      "imageOnly": "Chỉ hỗ trợ file ảnh.",
+      "fileTooLarge": "File quá lớn. Tối đa {mb}MB.",
+      "uploaded": "Đã tải lên tệp.",
+      "uploadFailed": "Tải lên thất bại.",
+      "noGaId": "Chưa có GA ID để copy.",
+      "copiedGaId": "Đã copy GA ID.",
+      "copyFailed": "Copy thất bại (trình duyệt chặn clipboard)."
+    }
+  },
+  "movies": {
+    "title": "Thư viện phim",
+    "subtitle": "Quản lý và cập nhật danh mục phim của bạn.",
+    "actions": {
+      "create": "Thêm phim",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "details": "Chi tiết",
+      "episodes": "Tập phim",
+      "undo": "Hoàn tác",
+      "undoDeleteTitle": "Hoàn tác xóa",
+      "importExcel": "Nhập Excel",
+      "importExcelTitle": "Upload file Excel/CSV để tạo nhiều phim",
+      "reset": "Đặt lại",
+      "apply": "Áp dụng",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "addImages": "Thêm ảnh",
+      "uploadFile": "Tải file",
+      "downloadTemplate": "Tải File Mẫu",
+      "downloadTemplateTitle": "Tải về file Excel mẫu để điền dữ liệu"
+    },
+    "filters": {
+      "searchPlaceholder": "Tìm kiếm theo tên / tag...",
+      "allCountries": "Tất cả quốc gia",
+      "allCategories": "Tất cả thể loại",
+      "allQualities": "Tất cả chất lượng",
+      "allTypes": "Tất cả định dạng",
+      "allStatus": "Tất cả trạng thái",
+      "releaseYearPlaceholder": "Năm phát hành",
+      "tagsPlaceholder": "Tags (csv)",
+      "minImdb": "IMDb tối thiểu",
+      "maxImdb": "IMDb tối đa",
+      "minRating": "Rating tối thiểu",
+      "maxRating": "Rating tối đa",
+      "newAll": "Mới: Tất cả",
+      "newTrue": "Mới: Có",
+      "newFalse": "Mới: Không",
+      "featuredAll": "Nổi bật: Tất cả",
+      "featuredTrue": "Nổi bật: Có",
+      "featuredFalse": "Nổi bật: Không",
+      "trendingAll": "Thịnh hành: Tất cả",
+      "trendingTrue": "Thịnh hành: Có",
+      "trendingFalse": "Thịnh hành: Không",
+      "includeHidden": "Bao gồm ẩn",
+      "includeDeleted": "Bao gồm đã xóa"
+    },
+    "sort": {
+      "newest": "Mới nhất",
+      "oldest": "Cũ nhất",
+      "viewsDesc": "Lượt xem ↓",
+      "imdbDesc": "IMDb ↓",
+      "ratingDesc": "Rating ↓",
+      "releaseYearDesc": "Năm phát hành ↓",
+      "titleAsc": "Tên A→Z",
+      "titleDesc": "Tên Z→A",
+      "trendingDesc": "Thịnh hành ↓"
+    },
+    "status": {
+      "released": "Phát hành",
+      "comingSoon": "Sắp ra mắt",
+      "hidden": "Ẩn",
+      "draft": "Nháp"
+    },
+    "flags": {
+      "featured": "Nổi bật",
+      "trending": "Thịnh hành",
+      "new": "Mới",
+      "none": "-"
+    },
+    "table": {
+      "idSlug": "ID / Slug",
+      "poster": "Poster",
+      "title": "Tên phim",
+      "release": "Phát hành",
+      "type": "Định dạng",
+      "genres": "Thể loại",
+      "countries": "Quốc gia",
+      "quality": "Chất lượng",
+      "imdb": "IMDb",
+      "rating": "Rating",
+      "views": "Lượt xem",
+      "flags": "Cờ",
+      "status": "Trạng thái",
+      "created": "Tạo lúc",
+      "actions": "Thao tác",
+      "empty": "Không có phim.",
+      "showing": "Hiển thị {from} đến {to} trong {total} bản ghi"
+    },
+    "details": {
+      "overview": "Tóm tắt",
+      "tags": "Tags",
+      "durationLanguage": "Thời lượng / Ngôn ngữ",
+      "min": "phút",
+      "trendingScore": "Điểm thịnh hành",
+      "updatedDeleted": "Cập nhật / Xóa",
+      "media": "Media",
+      "poster": "Poster",
+      "backdrop": "Backdrop",
+      "trailer": "Trailer",
+      "stream": "Stream"
+    },
+    "undoBanner": {
+      "text": "Đã xóa phim{titlePart}.",
+      "titlePart": ": {title}",
+      "button": "Hoàn tác"
+    },
+    "modal": {
+      "editTitle": "Chỉnh sửa phim",
+      "createTitle": "Thêm phim mới",
+      "sections": {
+        "general": "Thông tin chung",
+        "taxonomiesMedia": "Phân loại & Media",
+        "gallery": "Thư viện ảnh"
+      },
+      "fields": {
+        "name": "Tên phim (Tiêu đề)",
+        "namePlaceholder": "Nhập tên phim...",
+        "slug": "Đường dẫn tĩnh (Slug)",
+        "slugPlaceholder": "Tùy chọn",
+        "releaseYear": "Năm phát hành",
+        "type": "Định dạng",
+        "quality": "Chất lượng",
+        "director": "Đạo diễn",
+        "overview": "Tóm tắt (Overview)",
+        "countries": "Quốc gia (Chọn nhiều)",
+        "countriesPlaceholder": "Chọn hoặc nhập quốc gia",
+        "genres": "Thể loại (Chọn nhiều)",
+        "genresPlaceholder": "Chọn hoặc nhập thể loại",
+        "trailerUrl": "Trailer URL",
+        "streamUrl": "Stream URL (Đường dẫn phim)",
+        "streamPlaceholder": "Đường dẫn nguồn phim...",
+        "poster": "Ảnh Poster",
+        "posterPlaceholder": "Nhập đường dẫn URL ảnh...",
+        "backdrop": "Ảnh Backdrop",
+        "backdropPlaceholder": "Nhập đường dẫn URL ảnh...",
+        "clickUpload": "Click để tải lên",
+        "gallery": "Thư viện ảnh (Gallery)",
+        "galleryCount": "{count} / 10 ảnh",
+        "addImage": "Thêm ảnh",
+        "statusLabel": "Trạng thái:",
+        "statusReleased": "Phát hành",
+        "statusComingSoon": "Sắp ra mắt",
+        "statusHidden": "Ẩn (Không hiển thị ở client)"
+      },
+      "buttons": {
+        "cancel": "Hủy bỏ",
+        "save": "Ghi lại"
+      }
+    },
+    "messages": {
+      "titleRequired": "Vui lòng nhập tên phim.",
+      "updated": "Đã cập nhật phim.",
+      "created": "Đã tạo phim mới.",
+      "saveFailed": "Lưu phim thất bại. Vui lòng thử lại.",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa phim này? Bạn có thể hoàn tác trong 10 giây.",
+      "deleted": "Đã xóa phim. Bạn có thể hoàn tác trong 10 giây.",
+      "deleteFailed": "Xóa phim thất bại. Vui lòng thử lại.",
+      "restored": "Đã khôi phục phim.",
+      "restoreFailed": "Khôi phục phim thất bại. Vui lòng thử lại.",
+      "importDone": "Import xong: tạo {created}, lỗi {failed}.",
+      "importHasErrors": "Có dòng import lỗi. Xem console để biết chi tiết.",
+      "importFailed": "Import thất bại. Kiểm tra console/network.",
+      "loadFailed": "Không tải được danh sách phim.",
+      "filtersLoadFailed": "Không tải được bộ lọc (quốc gia/thể loại).",
+      "uploadImageFailed": "Upload ảnh thất bại. Vui lòng thử lại.",
+      "uploadVideoFailed": "Upload video thất bại. Vui lòng thử lại.",
+      "galleryMax": "Chỉ được phép tải lên tối đa 10 ảnh trong Gallery!",
+      "uploadGalleryFailed": "Upload Gallery thất bại. Vui lòng thử lại.",
+      "downloadTemplateFailed": "Tải file mẫu thất bại."
+    }
+  },
+  "transactions": {
+    "title": "Lịch sử giao dịch",
+    "subtitle": "Quản lý thanh toán và các gói đăng ký của người dùng.",
+    "filters": {
+      "perPage": "{count} / trang"
+    },
+    "table": {
+      "id": "ID",
+      "user": "Người dùng",
+      "plan": "Gói đăng ký",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "date": "Ngày",
+      "actions": "Thao tác",
+      "empty": "Không có giao dịch nào."
+    },
+    "actions": {
+      "edit": "Sửa",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "messages": {
+      "loadFailed": "Lỗi khi tải danh sách giao dịch.",
+      "saved": "Cập nhật giao dịch thành công.",
+      "saveFailed": "Lỗi khi cập nhật giao dịch."
+    },
+    "pagination": {
+      "showing": "Hiển thị {from} - {to} trong số {total} giao dịch",
+      "prev": "Trang trước",
+      "next": "Trang sau"
+    },
+    "modal": {
+      "editTitle": "Cập nhật trạng thái giao dịch",
+      "statusLabel": "Trạng thái"
+    }
+  }
+}

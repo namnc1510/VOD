@@ -1,0 +1,69 @@
+{
+  "updatePassword": "Update Password",
+  "updateBasicProfile": "Update Basic Profile",
+  "centerTitle": "Profile",
+  "tabs": {
+    "basic": "Basic Settings",
+    "security": "Security Settings",
+    "password": "Change Password",
+    "notice": "Notifications"
+  },
+  "base": {
+    "realName": "Full name",
+    "username": "Username",
+    "roles": "Roles",
+    "introduction": "Bio",
+    "roleOptions": {
+      "admin": "Administrator",
+      "user": "User",
+      "test": "Tester"
+    }
+  },
+  "security": {
+    "accountPassword": {
+      "label": "Account password",
+      "description": "Current password strength: Strong"
+    },
+    "securityPhone": {
+      "label": "Security phone",
+      "description": "Phone bound: 138****8293"
+    },
+    "securityQuestion": {
+      "label": "Security question",
+      "description": "No security question set. Setting one helps protect your account."
+    },
+    "securityEmail": {
+      "label": "Backup email",
+      "description": "Email bound: ant***sign.com"
+    },
+    "securityMfa": {
+      "label": "MFA device",
+      "description": "No MFA device bound. After binding, you can enable two-factor confirmation."
+    }
+  },
+  "notifications": {
+    "accountPassword": {
+      "label": "Account password",
+      "description": "Messages from other users will be notified via in-app messages."
+    },
+    "systemMessage": {
+      "label": "System messages",
+      "description": "System messages will be notified via in-app messages."
+    },
+    "todoTask": {
+      "label": "To-do tasks",
+      "description": "To-do tasks will be notified via in-app messages."
+    }
+  },
+  "password": {
+    "oldPasswordLabel": "Old password",
+    "oldPasswordPlaceholder": "Please enter old password",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "Please enter new password",
+    "confirmPasswordLabel": "Confirm password",
+    "confirmPasswordPlaceholder": "Please re-enter new password",
+    "confirmPasswordRequired": "Please re-enter new password",
+    "mismatch": "Passwords do not match",
+    "success": "Password updated successfully"
+  }
+}

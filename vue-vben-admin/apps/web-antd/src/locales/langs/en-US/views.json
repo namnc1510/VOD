@@ -1,0 +1,761 @@
+{
+  "taxonomies": {
+    "title": "Taxonomy Management",
+    "subtitle": "Countries, Genres, Quality, Formats",
+    "tabs": {
+      "category": "Genres",
+      "country": "Countries",
+      "format": "Formats (Type)",
+      "quality": "Quality"
+    },
+    "actions": {
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "table": {
+      "id": "ID",
+      "name": "Name",
+      "slug": "Slug",
+      "description": "Description",
+      "actions": "Actions",
+      "empty": "No data yet."
+    },
+    "modal": {
+      "editTitle": "Edit taxonomy",
+      "createTitle": "Create taxonomy",
+      "nameLabel": "Name",
+      "namePlaceholder": "Example: Action, Korea...",
+      "slugLabel": "Slug",
+      "slugPlaceholder": "action",
+      "descriptionLabel": "Description (optional)"
+    },
+    "messages": {
+      "loadFailed": "Failed to load taxonomies. Please try again.",
+      "saved": "Saved taxonomy.",
+      "saveFailed": "Failed to save taxonomy.",
+      "deleteConfirm": "Are you sure you want to delete this item?",
+      "deleted": "Deleted.",
+      "deleteFailed": "Delete failed."
+    }
+  },
+  "statistics": {
+    "title": "Platform Analytics",
+    "subtitle": "Overview of performance: views, signups, plans, and top content.",
+    "ranges": {
+      "today": "Today",
+      "todayHint": "00:00 - now",
+      "7d": "7 days",
+      "7dHint": "Last 7 days",
+      "30d": "30 days",
+      "30dHint": "Last 30 days",
+      "custom": "Custom"
+    },
+    "actions": {
+      "customRange": "Custom",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "downloadReport": "Download report",
+      "exportCsv": "Export CSV",
+      "retry": "Retry"
+    },
+    "messages": {
+      "loadFailed": "Failed to load analytics data.",
+      "selectRangeRequired": "Please select a date range.",
+      "unauthorized": "Please login to view analytics.",
+      "forbidden": "You do not have permission to view analytics."
+    },
+    "kpis": {
+      "views": "Total views",
+      "movies": "Total movies",
+      "users": "Total users",
+      "comments": "Total comments",
+      "watchlist": "Watch activities",
+      "categories": "Categories",
+      "byRange": "In {range}"
+    },
+    "sections": {
+      "topMovies": "Top movies",
+      "topGenres": "Top genres",
+      "topCountries": "Views by country",
+      "topCountriesDesc": "Viewer distribution by region",
+      "engagement": "Engagement",
+      "engagementDesc": "Active viewers, completion, and watch depth.",
+      "funnel": "Funnel",
+      "funnelDesc": "A simple conversion view from signups to completions.",
+      "alerts": "Alerts",
+      "alertsDesc": "Things that likely need attention."
+    },
+    "charts": {
+      "viewershipTrends": "Viewership trends",
+      "currentPeriod": "Current period",
+      "previous": "Previous",
+      "noData": "No data",
+      "planDistribution": "Plan distribution",
+      "premiumShare": "Premium share",
+      "premiumPlan": "Premium",
+      "freePlan": "Free",
+      "deviceDistribution": "Device distribution",
+      "device": {
+        "mobile": "Mobile",
+        "desktop": "Desktop",
+        "tv": "Smart TV",
+        "unknown": "Unknown"
+      },
+      "viewsByDevice": "Views by device",
+      "mobileAvg": "Mobile avg",
+      "smartTv": "Smart TV",
+      "mobile": "Mobile",
+      "desktop": "Desktop",
+      "others": "Others"
+    },
+    "rankings": {
+      "topContent": "Top content",
+      "topGenres": "Top genres",
+      "topGrowing": "Top growing",
+      "viewMore": "View more",
+      "byViewsIn": "By views in {range}",
+      "byMovieCount": "By movie count",
+      "byGrowthIn": "By growth in {range}"
+    },
+    "engagement": {
+      "activeViewers": "Active viewers",
+      "completionRate": "Completion rate",
+      "avgProgress": "Avg progress",
+      "medianProgress": "Median progress"
+    },
+    "funnel": {
+      "signups": "Signups",
+      "watchActivities": "Watch activities",
+      "completions": "Completions",
+      "signupToWatch": "Signup \u2192 Watch",
+      "watchToComplete": "Watch \u2192 Complete"
+    },
+    "alerts": {
+      "hiddenContent": "Watch activity on hidden/deleted content"
+    },
+    "meta": {
+      "viewsDot": "Views \u2022 {views}",
+      "unknown": "Unknown",
+      "moviesCount": "{count} movies",
+      "viewsCount": "{count} views",
+      "watchActivities": "Activities",
+      "minutes": "min",
+      "rangeSummary": "{from} \u2192 {to} \u00b7 {days} days \u00b7 {tz}",
+      "growthMeta": "Now {current} \u00b7 Prev {previous}",
+      "deltaLabel": "Delta"
+    },
+    "customRange": {
+      "title": "Select date range",
+      "subtitle": "Applies to analytics (Users, Movies, Comments, Views).",
+      "hint": "Tip: the end date is inclusive (the system sends `to` as exclusive)."
+    }
+  },
+  "comments": {
+    "title": "Comment Moderation",
+    "badge": "Moderation",
+    "stats": {
+      "total": "Total comments",
+      "pending": "Pending",
+      "approved": "Approved",
+      "spam": "Spam"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "spam": "Spam"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by content...",
+      "all": "All",
+      "perPage": "{count} / page"
+    },
+    "table": {
+      "user": "User",
+      "movie": "Movie",
+      "content": "Content",
+      "time": "Time",
+      "status": "Status",
+      "actions": "Actions",
+      "unknownUser": "Unknown",
+      "na": "N/A",
+      "hiddenNote": "Hidden",
+      "empty": "No comments."
+    },
+    "actions": {
+      "approve": "Approve",
+      "markSpam": "Mark as spam",
+      "notSpam": "Not spam",
+      "reply": "Reply",
+      "delete": "Delete",
+      "deleteForever": "Delete forever",
+      "hide": "Hide",
+      "show": "Show"
+    },
+    "messages": {
+      "loadFailed": "Failed to load comments.",
+      "statusUpdated": "Status updated.",
+      "statusUpdateFailed": "Failed to update status.",
+      "shown": "Comment is now visible.",
+      "hidden": "Comment hidden.",
+      "toggleHiddenFailed": "Failed to update hidden/visible status.",
+      "deleteConfirm": "Delete this comment?",
+      "deletePermanentConfirm": "Delete this comment permanently?",
+      "deleted": "Deleted.",
+      "deletedPermanent": "Deleted permanently.",
+      "deleteFailed": "Failed to delete comment.",
+      "replyNotSupported": "Reply is not supported yet."
+    },
+    "pagination": {
+      "showing": "Showing {from} - {to} of {total} results"
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "clientTitle": "Movie Client Users",
+    "subtitle": "Manage system accounts, roles, and user status.",
+    "actions": {
+      "create": "Add user",
+      "edit": "Edit",
+      "delete": "Delete",
+      "refresh": "Refresh",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name or email...",
+      "allRoles": "All roles",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "perPage": "{count} / page"
+    },
+    "table": {
+      "id": "ID",
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "lastLogin": "Last login",
+      "actions": "Actions",
+      "empty": "No users found.",
+      "anonymous": "Anonymous user",
+      "active": "Active",
+      "na": "N/A"
+    },
+    "messages": {
+      "loadFailed": "Failed to load users.",
+      "saved": "Saved user.",
+      "saveFailed": "Failed to save user.",
+      "deleteConfirm": "Are you sure you want to delete this user? This cannot be undone.",
+      "deleted": "Deleted user.",
+      "deleteFailed": "Failed to delete user."
+    },
+    "pagination": {
+      "showing": "Showing {from} - {to} of {total} accounts",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "modal": {
+      "editTitle": "Edit account",
+      "createTitle": "Create account",
+      "nameLabel": "Display name",
+      "emailLabel": "Email",
+      "emailLockedHint": "Email cannot be changed after creation.",
+      "roleLabel": "System role"
+    }
+  },
+  "permissions": {
+    "title": "Roles & Permissions",
+    "subtitle": "Manage role permissions using access codes.",
+    "actions": {
+      "discard": "Discard",
+      "save": "Save changes"
+    },
+    "roles": {
+      "admin": {
+        "label": "Administrator",
+        "desc": "Full system administration."
+      },
+      "editor": {
+        "label": "Editor",
+        "desc": "Manage movies and taxonomies."
+      },
+      "moderator": {
+        "label": "Moderator",
+        "desc": "Review and moderate comments."
+      },
+      "user": {
+        "label": "Regular user",
+        "desc": "Standard user account."
+      }
+    },
+    "status": {
+      "active": "Active",
+      "unsaved": "You have unsaved changes."
+    },
+    "matrix": {
+      "title": "Permission matrix: {role}",
+      "subtitle": "Tick permissions per module.",
+      "availableRoles": "Available roles",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all"
+    },
+    "table": {
+      "module": "Module / section",
+      "view": "View",
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "modules": {
+      "movies": "Movies",
+      "comments": "Comments",
+      "taxonomies": "Taxonomies",
+      "users": "Users",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "advanced": {
+      "title": "Advanced permissions",
+      "bypassMaintenance": {
+        "title": "Bypass Maintenance Mode",
+        "desc": "Allow access even when the system is in maintenance."
+      },
+      "apiKeys": {
+        "title": "API Key Generation",
+        "desc": "Manage developer tools and system tokens."
+      },
+      "viewLogs": {
+        "title": "System Logs View",
+        "desc": "View logs and admin audit trails."
+      },
+      "dbBackup": {
+        "title": "Database Backup",
+        "desc": "Create manual snapshots/backups."
+      }
+    },
+    "messages": {
+      "loadFailed": "Failed to load role permissions.",
+      "discarded": "Changes discarded (not saved).",
+      "saved": "Permissions saved.",
+      "saveFailed": "Failed to save permissions."
+    }
+  },
+  "homeHero": {
+    "title": "Homepage Hero Slider",
+    "subtitle": "Choose the list of movies shown in the homepage hero banner (client).",
+    "actions": {
+      "save": "Save",
+      "saving": "Saving...",
+      "search": "Search",
+      "add": "Add"
+    },
+    "sections": {
+      "selected": "Selected slides",
+      "addMovies": "Add movies"
+    },
+    "fields": {
+      "limitLabel": "Slides limit",
+      "limitHint": "If the selected list is shorter than the limit, it can autofill with top-viewed movies.",
+      "autofillLabel": "Autofill",
+      "autofillHint": "Automatically add top-view movies when slides are missing or hidden.",
+      "autoPlayLabel": "Auto-play Slider",
+      "autoPlayHint": "Automatically cycle the big header images.",
+      "intervalLabel": "Auto-play interval speed (seconds)",
+      "searchPlaceholder": "Search title..."
+    },
+    "messages": {
+      "loadFailed": "Failed to load hero slider settings.",
+      "loadSelectedFailed": "Failed to load selected movies.",
+      "maxMovies": "Maximum 30 movies in the slider.",
+      "searchFailed": "Movie search failed.",
+      "saved": "Saved hero slider settings.",
+      "saveFailed": "Failed to save settings.",
+      "notFound": "(Movie not found)",
+      "emptySelected": "No movies selected. Search on the right to add to the slider.",
+      "emptySearch": "Enter a keyword to search movies and add to the slider."
+    },
+    "meta": {
+      "views": "Views",
+      "imdb": "IMDB",
+      "na": "N/A"
+    },
+    "aria": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove"
+    }
+  },
+  "episodes": {
+    "title": "Episodes",
+    "subtitle": "Manage episodes, video links, and visibility (hide to not show on client).",
+    "actions": {
+      "add": "Add episode",
+      "filter": "Filter",
+      "showDeleted": "Show deleted",
+      "undo": "Undo",
+      "restore": "Restore",
+      "toggleHidden": "Hide/Show on client",
+      "preview": "Preview video",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "filters": {
+      "currentMovie": "Current movie",
+      "allMovies": "All movies",
+      "status": "Status",
+      "allStatus": "All",
+      "search": "Search",
+      "searchPlaceholder": "Search by title..."
+    },
+    "status": {
+      "published": "Published",
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "hidden": "Hidden",
+      "unknown": "Unknown"
+    },
+    "table": {
+      "id": "ID",
+      "epNo": "Ep No",
+      "title": "Title",
+      "duration": "Duration",
+      "status": "Status",
+      "videoUrl": "Video URL",
+      "actions": "Actions",
+      "notSet": "Not set",
+      "loading": "Loading...",
+      "empty": "No episodes."
+    },
+    "messages": {
+      "videoUploadSuccess": "Video uploaded.",
+      "videoUploadFailed": "Video upload failed.",
+      "movieRequired": "Please select a movie.",
+      "titleRequired": "Please enter an episode title.",
+      "epNoInvalid": "Episode number is invalid.",
+      "updated": "Episode updated.",
+      "created": "Episode created.",
+      "saveFailed": "Failed to save episode.",
+      "deleteConfirm": "Delete episode \"{title}\"?",
+      "deletedPrefix": "Deleted:",
+      "deletedUndo": "Deleted. You can undo within 12 seconds.",
+      "deleteFailed": "Failed to delete episode.",
+      "undoSuccess": "Undone.",
+      "undoFailed": "Undo failed.",
+      "restored": "Restored.",
+      "restoreFailed": "Restore failed.",
+      "toggleFailed": "Failed to update status."
+    },
+    "pagination": {
+      "summary": "Total: {total} episodes • Page {page} / {pages}"
+    },
+    "modal": {
+      "editTitle": "Update episode",
+      "createTitle": "Add new episode",
+      "uploadHint": "You can upload an mp4 to the server to get a URL.",
+      "movieLabel": "Movie",
+      "moviePlaceholder": "Select movie",
+      "epNoLabel": "Episode no",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Example: Episode 1 - The Beginning",
+      "durationLabel": "Duration (seconds)",
+      "statusLabel": "Status",
+      "airDateLabel": "Air date (optional)",
+      "videoUrlLabel": "Video URL",
+      "videoUrlPlaceholder": "https://... or /uploads/...",
+      "uploading": "Uploading...",
+      "uploadMp4": "Upload mp4",
+      "overviewLabel": "Description (optional)",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    }
+  },
+  "settings": {
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "system": "System",
+      "settings": "Settings"
+    },
+    "title": "Website Configuration",
+    "subtitle": "Centralized portal management for general, streaming, and SEO preferences.",
+    "actions": {
+      "reset": "Reset changes",
+      "save": "Save changes",
+      "discard": "Discard",
+      "saveAll": "Save all settings"
+    },
+    "tabs": {
+      "general": "General settings",
+      "streaming": "Streaming & CDN",
+      "seo": "SEO settings",
+      "ui": "UI settings"
+    },
+    "general": {
+      "title": "General information",
+      "siteName": "Site name",
+      "siteNameHint": "The title of your movie portal as seen by users.",
+      "timezone": "Default timezone",
+      "description": "Site description",
+      "logo": "Site logo",
+      "uploadLogo": "Upload new logo",
+      "logoHint": "SVG, PNG or JPG (max. 2MB)",
+      "favicon": "Favicon",
+      "changeFavicon": "Change favicon",
+      "faviconHint": "ICO or PNG (32x32px recommended)"
+    },
+    "ui": {
+      "title": "Interface settings",
+      "darkMode": "Dark mode",
+      "darkModeHint": "Force system-wide dark theme",
+      "primaryColor": "Primary theme color",
+      "primaryColorHint": "Pick your brand accent color",
+      "layout": "Layout style",
+      "sideNav": "Side navigation",
+      "topNav": "Top navigation"
+    },
+    "seo": {
+      "title": "SEO & Marketing",
+      "metaTitle": "Meta title",
+      "metaTitlePlaceholder": "Global meta title",
+      "gaId": "Google Analytics ID",
+      "copyGaId": "Copy GA ID",
+      "keywords": "Keywords (comma separated)",
+      "keywordPlaceholder": "Add tag and press Enter..."
+    },
+    "streaming": {
+      "title": "Streaming & CDN",
+      "cdnBaseUrl": "CDN Base URL",
+      "cdnHint": "Use this when you want to serve static assets/videos via a CDN."
+    },
+    "status": {
+      "unsaved": "You have unsaved changes."
+    },
+    "labels": {
+      "uploading": "Uploading..."
+    },
+    "messages": {
+      "loadFailed": "Failed to load settings. Please try again.",
+      "saved": "Settings saved.",
+      "saveFailed": "Failed to save settings.",
+      "discarded": "Changes discarded (not saved).",
+      "maxKeywords": "Up to 50 keywords.",
+      "imageOnly": "Only image files are supported.",
+      "fileTooLarge": "File is too large. Max {mb}MB.",
+      "uploaded": "File uploaded.",
+      "uploadFailed": "Upload failed.",
+      "noGaId": "No GA ID to copy.",
+      "copiedGaId": "GA ID copied.",
+      "copyFailed": "Copy failed (clipboard blocked by browser)."
+    }
+  },
+  "movies": {
+    "title": "Movie Library",
+    "subtitle": "Manage and update your movie collection catalog.",
+    "actions": {
+      "create": "Create movie",
+      "edit": "Edit",
+      "delete": "Delete",
+      "details": "Details",
+      "episodes": "Episodes",
+      "undo": "Undo",
+      "undoDeleteTitle": "Undo delete",
+      "importExcel": "Import Excel",
+      "importExcelTitle": "Upload Excel/CSV to create many movies",
+      "downloadTemplate": "Download Template",
+      "downloadTemplateTitle": "Download Excel template for data entry",
+      "reset": "Reset",
+      "apply": "Apply",
+      "save": "Save",
+      "cancel": "Cancel",
+      "addImages": "Add images",
+      "uploadFile": "Upload file"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by title / tag...",
+      "allCountries": "All countries",
+      "allCategories": "All categories",
+      "allQualities": "All qualities",
+      "allTypes": "All types",
+      "allStatus": "All status",
+      "releaseYearPlaceholder": "Release year",
+      "tagsPlaceholder": "Tags (csv)",
+      "minImdb": "min IMDb",
+      "maxImdb": "max IMDb",
+      "minRating": "min Rating",
+      "maxRating": "max Rating",
+      "newAll": "New: All",
+      "newTrue": "New: True",
+      "newFalse": "New: False",
+      "featuredAll": "Featured: All",
+      "featuredTrue": "Featured: True",
+      "featuredFalse": "Featured: False",
+      "trendingAll": "Trending: All",
+      "trendingTrue": "Trending: True",
+      "trendingFalse": "Trending: False",
+      "includeHidden": "Include hidden",
+      "includeDeleted": "Include deleted"
+    },
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "viewsDesc": "Views \u2193",
+      "imdbDesc": "IMDb \u2193",
+      "ratingDesc": "Rating \u2193",
+      "releaseYearDesc": "Release year \u2193",
+      "titleAsc": "Title A\u2192Z",
+      "titleDesc": "Title Z\u2192A",
+      "trendingDesc": "Trending \u2193"
+    },
+    "status": {
+      "released": "Released",
+      "comingSoon": "Coming soon",
+      "hidden": "Hidden",
+      "draft": "Draft"
+    },
+    "flags": {
+      "featured": "Featured",
+      "trending": "Trending",
+      "new": "New",
+      "none": "-"
+    },
+    "table": {
+      "idSlug": "ID / Slug",
+      "poster": "Poster",
+      "title": "Title",
+      "release": "Release",
+      "type": "Type",
+      "genres": "Genres",
+      "countries": "Countries",
+      "quality": "Quality",
+      "imdb": "IMDb",
+      "rating": "Rating",
+      "views": "Views",
+      "flags": "Flags",
+      "status": "Status",
+      "created": "Created",
+      "actions": "Actions",
+      "empty": "No movies found.",
+      "showing": "Showing {from} to {to} of {total} entries"
+    },
+    "details": {
+      "overview": "Overview",
+      "tags": "Tags",
+      "durationLanguage": "Duration / Language",
+      "min": "min",
+      "trendingScore": "Trending score",
+      "updatedDeleted": "Updated / Deleted",
+      "media": "Media",
+      "poster": "Poster",
+      "backdrop": "Backdrop",
+      "trailer": "Trailer",
+      "stream": "Stream"
+    },
+    "undoBanner": {
+      "text": "Deleted movie{titlePart}.",
+      "titlePart": ": {title}",
+      "button": "Undo"
+    },
+    "modal": {
+      "editTitle": "Edit movie",
+      "createTitle": "Create new movie",
+      "sections": {
+        "general": "General information",
+        "taxonomiesMedia": "Taxonomies & Media",
+        "gallery": "Image gallery"
+      },
+      "fields": {
+        "name": "Movie title",
+        "namePlaceholder": "Enter movie title...",
+        "slug": "Slug",
+        "slugPlaceholder": "Optional",
+        "releaseYear": "Release year",
+        "type": "Type",
+        "quality": "Quality",
+        "director": "Director",
+        "overview": "Overview",
+        "countries": "Countries (multiple)",
+        "countriesPlaceholder": "Select or type countries",
+        "genres": "Genres (multiple)",
+        "genresPlaceholder": "Select or type genres",
+        "trailerUrl": "Trailer URL",
+        "streamUrl": "Stream URL",
+        "streamPlaceholder": "Movie source URL...",
+        "poster": "Poster image",
+        "posterPlaceholder": "Enter image URL...",
+        "backdrop": "Backdrop image",
+        "backdropPlaceholder": "Enter image URL...",
+        "clickUpload": "Click to upload",
+        "gallery": "Gallery",
+        "galleryCount": "{count} / 10 images",
+        "addImage": "Add image",
+        "statusLabel": "Status:",
+        "statusReleased": "Released",
+        "statusComingSoon": "Coming soon",
+        "statusHidden": "Hidden (not shown on client)"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "save": "Save"
+      }
+    },
+    "messages": {
+      "titleRequired": "Please enter a movie title.",
+      "downloadTemplateFailed": "Failed to download template.",
+      "updated": "Updated movie.",
+      "created": "Created movie.",
+      "saveFailed": "Failed to save movie. Please try again.",
+      "deleteConfirm": "Are you sure you want to delete this movie? You can undo within 10 seconds.",
+      "deleted": "Deleted movie. You can undo within 10 seconds.",
+      "deleteFailed": "Failed to delete movie. Please try again.",
+      "restored": "Movie restored.",
+      "restoreFailed": "Failed to restore movie. Please try again.",
+      "importDone": "Import finished: created {created}, failed {failed}.",
+      "importHasErrors": "Some rows failed to import. See console for details.",
+      "importFailed": "Import failed. Check console/network.",
+      "loadFailed": "Failed to load movies.",
+      "filtersLoadFailed": "Failed to load filters (countries/genres).",
+      "uploadImageFailed": "Image upload failed. Please try again.",
+      "uploadVideoFailed": "Video upload failed. Please try again.",
+      "galleryMax": "Maximum 10 images in the gallery.",
+      "uploadGalleryFailed": "Gallery upload failed. Please try again."
+    }
+  },
+  "transactions": {
+    "title": "Transactions History",
+    "subtitle": "Monitor user payments and subscriptions.",
+    "filters": {
+      "perPage": "{count} / page"
+    },
+    "table": {
+      "id": "ID",
+      "user": "User",
+      "plan": "Purchased Plan",
+      "amount": "Amount",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions",
+      "empty": "No transactions found."
+    },
+    "actions": {
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "loadFailed": "Failed to load transactions.",
+      "saved": "Transaction updated successfully.",
+      "saveFailed": "Failed to update transaction."
+    },
+    "pagination": {
+      "showing": "Showing {from} - {to} of {total} transactions",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "modal": {
+      "editTitle": "Update Transaction Status",
+      "statusLabel": "Status"
+    }
+  }
+}
