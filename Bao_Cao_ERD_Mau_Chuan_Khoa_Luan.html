@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Báo Cáo Sơ Đồ Quan Hệ Thực Thể - Hệ Thống VOD</title>
+    <style>
+        body { font-family: "Times New Roman", Times, serif; line-height: 1.5; padding: 40px; color: #333; background-color: #f4f7f6; }
+        .container { background-color: #fff; padding: 40px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
+        h1, h2 { text-align: center; color: #2c3e50; text-transform: uppercase; }
+        h1 { font-size: 22px; margin-bottom: 30px; }
+        h2 { font-size: 18px; margin-top: 40px; }
+        p { margin-bottom: 20px; text-align: justify; }
+        .figure-title { text-align: center; font-style: italic; margin-bottom: 30px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #000; padding: 10px; text-align: left; vertical-align: top; }
+        th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+        .table-title { font-weight: bold; margin-bottom: 10px; display: block; }
+        .mermaid { text-align: center; margin-bottom: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SƠ ĐỒ QUAN HỆ THỰC THỂ (ERD)</h1>
+
+    <div class="mermaid">
+        <!-- Chèn Hình ảnh vào Word sau khi vẽ Mermaid -->
+        <p>[ Hình 2.7 Sơ đồ quan hệ thực thể ]</p>
+    </div>
+    <p class="figure-title">Hình 2.7 Sơ đồ quan hệ thực thể hệ thống VOD</p>
+
+    <h2>Chi tiết các bảng</h2>
+
+    <p class="table-title">Bảng 2.8 Bảng movies — Lưu trữ thông tin phim</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Ràng buộc</th>
+                <th>Mô tả</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>movie_id</td><td>BIGINT</td><td>PK, Auto-increment</td><td>Mã phim</td></tr>
+            <tr><td>movie_title</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>Tên phim</td></tr>
+            <tr><td>movie_category</td><td>VARCHAR(255)</td><td></td><td>Danh mục (Hành động, Tình cảm...)</td></tr>
+            <tr><td>movie_description</td><td>VARCHAR(500)</td><td></td><td>Mô tả chi tiết nội dung</td></tr>
+            <tr><td>is_vip</td><td>BOOLEAN</td><td>Default: false</td><td>Phân loại phim VIP/Free</td></tr>
+            <tr><td>movie_studio</td><td>VARCHAR(255)</td><td></td><td>Tên hãng sản xuất/Studio</td></tr>
+            <tr><td>release_date</td><td>TIMESTAMP</td><td>Default: now()</td><td>Ngày phát hành</td></tr>
+            <tr><td>movie_views</td><td>INTEGER</td><td>Default: 0</td><td>Tổng số lượt xem</td></tr>
+            <tr><td>movie_rating</td><td>DOUBLE</td><td></td><td>Điểm đánh giá trung bình</td></tr>
+            <tr><td>image_url</td><td>VARCHAR(500)</td><td></td><td>URL hình ảnh poster phim</td></tr>
+        </tbody>
+    </table>
+
+    <p class="table-title">Bảng 2.9 Bảng user_table — Lưu trữ thông tin người dùng</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Ràng buộc</th>
+                <th>Mô tả</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>user_id</td><td>BIGINT</td><td>PK, Auto-increment</td><td>Mã người dùng</td></tr>
+            <tr><td>email_id</td><td>VARCHAR(255)</td><td>UNIQUE, NOT NULL</td><td>Email đăng nhập hệ thống</td></tr>
+            <tr><td>first_name</td><td>VARCHAR(255)</td><td></td><td>Họ và tên đệm</td></tr>
+            <tr><td>last_name</td><td>VARCHAR(255)</td><td></td><td>Tên người dùng</td></tr>
+            <tr><td>user_gender</td><td>VARCHAR(50)</td><td></td><td>Giới tính</td></tr>
+            <tr><td>user_phone_number</td><td>VARCHAR(20)</td><td></td><td>Số điện thoại liên lạc</td></tr>
+            <tr><td>user_password</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>Mật khẩu đã mã hóa (Bcrypt)</td></tr>
+            <tr><td>is_vip_active</td><td>BOOLEAN</td><td>Default: false</td><td>Trạng thái thuê bao VIP</td></tr>
+            <tr><td>vip_expiry_date</td><td>TIMESTAMP</td><td></td><td>Ngày hết hạn gói VIP</td></tr>
+            <tr><td>created_date</td><td>TIMESTAMP</td><td>Default: now()</td><td>Ngày tạo tài khoản</td></tr>
+            <tr><td>role_role_id</td><td>BIGINT</td><td>FK → role</td><td>Vai trò (User/Admin)</td></tr>
+        </tbody>
+    </table>
+
+    <p class="table-title">Bảng 2.10 Bảng role — Phân quyền</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Ràng buộc</th>
+                <th>Mô tả</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>role_id</td><td>BIGINT</td><td>PK, Auto-increment</td><td>Mã vai trò</td></tr>
+            <tr><td>role_name</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>Tên vai trò (ADMIN, USER)</td></tr>
+        </tbody>
+    </table>
+
+    <p class="table-title">Bảng 2.11 Bảng transactions — Lịch sử giao dịch</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Ràng buộc</th>
+                <th>Mô tả</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>transaction_id</td><td>BIGINT</td><td>PK, Auto-increment</td><td>Mã giao dịch</td></tr>
+            <tr><td>user_user_id</td><td>BIGINT</td><td>FK → user_table</td><td>Người thực hiện thanh toán</td></tr>
+            <tr><td>amount</td><td>DOUBLE</td><td>NOT NULL</td><td>Số tiền thanh toán</td></tr>
+            <tr><td>payment_status</td><td>VARCHAR(50)</td><td></td><td>Trạng thái (Success/Failed)</td></tr>
+            <tr><td>transaction_date</td><td>TIMESTAMP</td><td>Default: now()</td><td>Thời gian thực hiện nạp tiền</td></tr>
+        </tbody>
+    </table>
+
+    <p class="table-title">Bảng 2.12 Bảng comments — Tương tác bình luận</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Ràng buộc</th>
+                <th>Mô tả</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>comment_id</td><td>BIGINT</td><td>PK, Auto-increment</td><td>Mã bình luận</td></tr>
+            <tr><td>user_user_id</td><td>BIGINT</td><td>FK → user_table</td><td>Người đăng bình luận</td></tr>
+            <tr><td>movie_movie_id</td><td>BIGINT</td><td>FK → movies</td><td>Phim được bình luận</td></tr>
+            <tr><td>content</td><td>VARCHAR(1000)</td><td>NOT NULL</td><td>Nội dung bình luận</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>Default: now()</td><td>Thời gian bình luận</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2.4 Kết luận</h2>
+    <p>Trong nội dung chương này, hệ thống đã được phân tích chi tiết thông qua các mô hình dữ liệu quan hệ. Dựa vào phần trình bày trên, chúng tôi đã xác lập được cấu trúc lưu trữ dữ liệu tối ưu cho hệ thống xem phim VOD, đảm bảo tính nhất quán giữa các thực thể người dùng, phim ảnh và các thao tác nghiệp vụ thanh toán/tương tác.</p>
+</div>
+
+</body>
+</html>
