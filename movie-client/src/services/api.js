@@ -3,6 +3,11 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 30000);
 
+if (import.meta.env.PROD && API_BASE_URL.includes('localhost')) {
+  console.warn('%c[VOD] API_BASE_URL is pointing to localhost in production!', 'color: orange; font-weight: bold;');
+  console.info('%c[VOD] Please set VITE_API_BASE_URL in your Vercel settings to your production backend URL.', 'color: blue;');
+}
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: Number.isFinite(API_TIMEOUT_MS) ? API_TIMEOUT_MS : 30000

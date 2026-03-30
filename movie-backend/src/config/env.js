@@ -29,7 +29,7 @@ const defaultOrigins = [
 const config = Object.freeze({
   env: process.env.NODE_ENV || 'development',
   port: parseNumber(process.env.PORT, 3001),
-  mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/The-Movie',
+  mongoUri: process.env.MONGO_URI || (process.env.NODE_ENV === 'production' ? '' : 'mongodb://127.0.0.1:27017/The-Movie'),
   mongoMaxPoolSize: parseNumber(process.env.MONGO_MAX_POOL_SIZE, 20),
   mongoServerSelectionTimeoutMs: parseNumber(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS, 10_000),
   mongoSocketTimeoutMs: parseNumber(process.env.MONGO_SOCKET_TIMEOUT_MS, 45_000),
@@ -52,5 +52,10 @@ const config = Object.freeze({
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
   cloudinaryFolder: process.env.CLOUDINARY_FOLDER || 'movie-uploads'
 });
+
+if (config.env === 'production' && !config.mongoUri) {
+  console.error('\x1b[31m[ERROR] MONGO_URI is not defined in production environment!\x1b[0m');
+  console.error('\x1b[33m[TIP] Please set MONGO_URI in your dashboard (Render/Vercel/etc.)\x1b[0m');
+}
 
 module.exports = config;
