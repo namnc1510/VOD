@@ -17,7 +17,7 @@ const settingsStore = useSettingsStore();
     <AppSidebar v-if="settingsStore.layout === 'side'" class="hidden xl:flex" />
     
     <div class="flex-1 flex flex-col min-w-0" :class="settingsStore.layout === 'side' ? 'overflow-y-auto h-full' : 'h-full'">
-      <main class="flex-1 px-6 md:px-20 py-8">
+      <main class="flex-1 px-8 md:px-24 pt-10 pb-20">
         <RouterView />
       </main>
       <AppFooter />

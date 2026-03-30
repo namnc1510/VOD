@@ -140,6 +140,17 @@ function stopHeroAutoplay() {
   }
 }
 
+const sectionRefs = ref({});
+function scroll(key, direction) {
+  const el = sectionRefs.value[key];
+  if (!el) return;
+  const scrollAmount = el.clientWidth * 0.8;
+  el.scrollBy({
+    left: direction * scrollAmount,
+    behavior: 'smooth'
+  });
+}
+
 async function loadFeed() {
   loading.value = true;
   error.value = '';
@@ -281,14 +292,37 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <!-- Movie Scrolling Sections -->
-      <section v-for="section in sections" :key="section.key" class="mb-12">
+      <section v-for="section in sections" :key="section.key" class="mb-12 group/section relative">
         <div class="flex items-center justify-between px-2 pb-6">
           <h2 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">{{ section.title }}</h2>
           <RouterLink to="/explore" class="text-primary text-sm font-semibold hover:underline">View All</RouterLink>
         </div>
-        <div class="flex overflow-x-auto pb-6 pt-2 gap-4 md:gap-6 scrollbar-hide snap-x px-6 md:px-20 -mx-6 md:-mx-20 relative">
-          <MovieCard v-for="movie in section.items" :key="movie.id" :movie="movie" />
+        
+        <div class="relative">
+          <!-- Left Arrow -->
+          <button 
+            @click="scroll(section.key, -1)"
+            class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 size-12 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 z-30 opacity-0 group-hover/section:opacity-100 transition-all hover:scale-110 hover:text-primary active:scale-95"
+            aria-label="Scroll left"
+          >
+            <span class="material-symbols-outlined font-bold">chevron_left</span>
+          </button>
+
+          <div 
+            :ref="el => { if (el) sectionRefs[section.key] = el }"
+            class="flex overflow-x-auto pb-6 pt-2 gap-4 md:gap-6 scrollbar-hide snap-x px-8 md:px-24 -mx-6 md:-mx-20 relative scroll-smooth"
+          >
+            <MovieCard v-for="(movie, idx) in section.items" :key="movie.id || idx" :movie="movie" />
+          </div>
+
+          <!-- Right Arrow -->
+          <button 
+            @click="scroll(section.key, 1)"
+            class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 size-12 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 z-30 opacity-0 group-hover/section:opacity-100 transition-all hover:scale-110 hover:text-primary active:scale-95"
+            aria-label="Scroll right"
+          >
+            <span class="material-symbols-outlined font-bold">chevron_right</span>
+          </button>
         </div>
       </section>
 

@@ -7,13 +7,13 @@ const { parsePagination, parseSort } = require('../utils/query');
 async function getPlans() {
   let setting = await Setting.findOne({ key: 'pricing' });
   if (!setting) {
-    setting = await Setting.create({ 
-      key: 'pricing', 
+    setting = await Setting.create({
+      key: 'pricing',
       subscriptionPlans: {
         standard: { monthly: 49000, annual: 470000 },
         premium: { monthly: 89000, annual: 850000 },
         ultimate: { monthly: 149000, annual: 1430000 }
-      } 
+      }
     });
   }
   return setting.subscriptionPlans;
@@ -60,13 +60,13 @@ async function processCheckout(userId, plan, billingCycle) {
 
   // Create transaction record
   await Transaction.create({
-     user: user._id,
-     amount,
-     currency: 'VND',
-     planPurchased: plan,
-     billingCycle: billingCycle,
-     status: 'completed',
-     paymentMethod: 'vnpay',
+    user: user._id,
+    amount,
+    currency: 'VND',
+    planPurchased: plan,
+    billingCycle: billingCycle,
+    status: 'completed',
+    paymentMethod: 'vnpay',
   });
 
   return {
@@ -114,10 +114,10 @@ async function listTransactions(query) {
 async function updateTransaction(id, payload) {
   const updateData = {};
   if (payload.status) updateData.status = payload.status;
-  
+
   const tx = await Transaction.findByIdAndUpdate(id, updateData, { new: true }).lean();
   if (!tx) throw new HttpError(404, 'Transaction not found');
-  
+
   return tx;
 }
 

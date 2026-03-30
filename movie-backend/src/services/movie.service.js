@@ -854,7 +854,7 @@ async function updateMovie(id, payload) {
       updateData.type = formatDoc.slug;
     }
   }
-  
+
   const movie = await Movie.findByIdAndUpdate(id, updateData, { new: true })
     .populate('genres', 'name slug')
     .populate('countries', 'name slug')
@@ -863,7 +863,7 @@ async function updateMovie(id, payload) {
     .populate('actors', 'name slug avatarUrl biography knownFor') // Added populate for actors
     .populate('directors', 'name slug avatarUrl biography knownFor') // Added populate for directors
     .lean();
-    
+
   if (!movie) throw new HttpError(404, 'Movie not found');
   return mapMovieDetail(movie);
 }

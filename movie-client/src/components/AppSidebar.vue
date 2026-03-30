@@ -80,9 +80,9 @@ async function playRandomMovie() {
       </RouterLink>
     </div>
 
-    <!-- Toggle Collapse Button centered vertically -->
-    <button @click="toggleSidebar" class="absolute top-1/2 -translate-y-1/2 -right-4 size-8 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-400 hover:text-primary rounded-full border border-slate-200 dark:border-slate-700 shadow-sm transition-all z-50">
-      <span class="material-symbols-outlined text-[18px]">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+    <!-- Toggle Collapse Button centered relative to header -->
+    <button @click="toggleSidebar" class="absolute top-9 -right-3.5 size-7 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-400 hover:text-primary rounded-full border border-slate-200 dark:border-slate-700 shadow-md transition-all z-50 hover:scale-110">
+      <span class="material-symbols-outlined text-[16px]">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
     </button>
 
     <div :class="['mb-6 transition-all', isCollapsed ? 'px-4' : 'px-6']">

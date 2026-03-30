@@ -1,4 +1,16 @@
 @echo off
+:: ======================================================
+:: THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP (ADMIN & DEMO)
+:: ======================================================
+:: 🔐 Tài khoản Quản trị (Admin):
+:: Email: admin@streamvue.local
+:: Mật khẩu: Admin@123456
+:: ------------------------------------------------------
+:: 🛡️ Tài khoản Demo (Người dùng thường):
+:: Email: demo@streamvue.local
+:: Mật khẩu: Demo@123456
+:: ======================================================
+
 echo Đang khởi động Movie Backend...
 start cmd /k "cd movie-backend && npm run dev"
 

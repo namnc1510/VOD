@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@streamvue/shared-core": "file:../shared-core",
-    "@vueuse/head": "^2.0.0",
+    "@vueuse/head": "^0.9.8",
     "axios": "^1.13.6",
     "pinia": "^3.0.4",
     "vue": "^3.5.25",
