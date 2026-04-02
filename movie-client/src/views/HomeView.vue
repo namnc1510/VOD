@@ -11,8 +11,15 @@ const loading = ref(true);
 const error = ref('');
 
 function normalizeFeed(input) {
-  const data = input && typeof input === 'object' ? input : {};
-  return {
+  // If the backend wraps it twice or differently, we try to handle it.
+  const data = (input && typeof input === 'object') ? (input.data || input) : {};
+  
+  if (import.meta.env.DEV) {
+    console.debug('[VOD] Raw Home Feed Data:', input);
+    console.debug('[VOD] Normalized Home Feed Data:', data);
+  }
+
+  const result = {
     hero: data.hero ?? null,
     heroSlides: Array.isArray(data.heroSlides) ? data.heroSlides : [],
     genres: Array.isArray(data.genres) ? data.genres : [],
@@ -23,6 +30,13 @@ function normalizeFeed(input) {
     countries: Array.isArray(data.countries) ? data.countries : [],
     continueWatching: Array.isArray(data.continueWatching) ? data.continueWatching : []
   };
+
+  // If hero is missing but heroSlides has data, pick the first one.
+  if (!result.hero && result.heroSlides.length > 0) {
+    result.hero = result.heroSlides[0];
+  }
+
+  return result;
 }
 
 function getContinueWatchingPercent(entry) {
