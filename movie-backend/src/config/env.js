@@ -24,6 +24,9 @@ const defaultOrigins = [
   // vben admin dev port
   'http://localhost:5666',
   'http://127.0.0.1:5666',
+  // Vercel deployment domains
+  'https://vod-ten.vercel.app',
+  'https://vod-qwqk.vercel.app',
 ];
 
 const config = Object.freeze({
