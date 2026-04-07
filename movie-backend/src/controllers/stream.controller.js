@@ -4,6 +4,7 @@ const path = require('path');
 const Episode = require('../models/episode.model');
 const Movie = require('../models/movie.model');
 const slugify = require('../utils/slug');
+const { proxyExternalStream } = require('../utils/stream-proxy');
 
 const plans = { free: 0, standard: 1, premium: 2, ultimate: 3 };
 const roles = { user: 0, editor: 1, moderator: 1, admin: 2, super: 3 };
@@ -64,6 +65,45 @@ function resolveUploadFilePathFromStreamUrl(streamUrl) {
   return path.join(__dirname, '../../data/uploads', filename);
 }
 
+function serveLocalFile(filePath, req, res) {
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'Video file not found on server',
+    });
+  }
+
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  if (range) {
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+    const chunksize = end - start + 1;
+    const file = fs.createReadStream(filePath, { start, end });
+    const head = {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunksize,
+      'Content-Type': 'video/mp4',
+    };
+
+    res.writeHead(206, head);
+    file.pipe(res);
+    return;
+  }
+
+  const head = {
+    'Content-Length': fileSize,
+    'Content-Type': 'video/mp4',
+  };
+  res.writeHead(200, head);
+  fs.createReadStream(filePath).pipe(res);
+}
+
 exports.streamMovie = async (req, res, next) => {
   try {
     const slug = slugify(req.params.slug);
@@ -95,7 +135,10 @@ exports.streamMovie = async (req, res, next) => {
     if (streamUrl && isExternalUrl(streamUrl) && !isPlaceholderUrl(streamUrl) && isProbablyDirectVideoAssetUrl(streamUrl)) {
       const candidate = resolveUploadFilePathFromStreamUrl(streamUrl);
       if (!candidate) {
-        return res.redirect(streamUrl);
+        return proxyExternalStream(streamUrl, req, res, (err) => {
+          console.warn(`Proxy failed for ${streamUrl}. Serving fallback dummy.mp4.`, err.message);
+          serveLocalFile(videoPath, req, res);
+        });
       }
     }
     const candidate = resolveUploadFilePathFromStreamUrl(movie?.streamUrl);
@@ -103,44 +146,7 @@ exports.streamMovie = async (req, res, next) => {
       videoPath = candidate;
     }
 
-    if (!fs.existsSync(videoPath)) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Video file not found on server',
-      });
-    }
-
-    const stat = fs.statSync(videoPath);
-    const fileSize = stat.size;
-    const range = req.headers.range;
-
-    if (range) {
-      // Chunked streaming (HTTP 206)
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-      const chunksize = end - start + 1;
-      const file = fs.createReadStream(videoPath, { start, end });
-      const head = {
-        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunksize,
-        'Content-Type': 'video/mp4',
-      };
-
-      res.writeHead(206, head);
-      file.pipe(res);
-      return;
-    }
-
-    // Full download (HTTP 200)
-    const head = {
-      'Content-Length': fileSize,
-      'Content-Type': 'video/mp4',
-    };
-    res.writeHead(200, head);
-    fs.createReadStream(videoPath).pipe(res);
+    serveLocalFile(videoPath, req, res);
   } catch (error) {
     next(error);
   }
@@ -192,7 +198,10 @@ exports.streamEpisode = async (req, res, next) => {
     if (typeof episode.streamUrl === 'string' && isExternalUrl(episode.streamUrl) && !isPlaceholderUrl(episode.streamUrl) && isProbablyDirectVideoAssetUrl(episode.streamUrl)) {
       const candidate = resolveUploadFilePathFromStreamUrl(episode.streamUrl);
       if (!candidate) {
-        return res.redirect(episode.streamUrl);
+        return proxyExternalStream(episode.streamUrl, req, res, (err) => {
+          console.warn(`Proxy failed for episode. Serving fallback dummy.mp4.`, err.message);
+          serveLocalFile(videoPath, req, res);
+        });
       }
     }
 
@@ -201,42 +210,7 @@ exports.streamEpisode = async (req, res, next) => {
       videoPath = candidate;
     }
 
-    if (!fs.existsSync(videoPath)) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Video file not found on server',
-      });
-    }
-
-    const stat = fs.statSync(videoPath);
-    const fileSize = stat.size;
-    const range = req.headers.range;
-
-    if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-      const chunksize = end - start + 1;
-      const file = fs.createReadStream(videoPath, { start, end });
-      const head = {
-        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunksize,
-        'Content-Type': 'video/mp4',
-      };
-
-      res.writeHead(206, head);
-      file.pipe(res);
-      return;
-    }
-
-    const head = {
-      'Content-Length': fileSize,
-      'Content-Type': 'video/mp4',
-    };
-    res.writeHead(200, head);
-    fs.createReadStream(videoPath).pipe(res);
+    serveLocalFile(videoPath, req, res);
   } catch (error) {
     next(error);
   }
