@@ -6,7 +6,7 @@ services:
     env: node
     # Root directory để trống để script chạy có thể truy cập được thư viện shared-core
     rootDir: .
-    buildCommand: "cd shared-core && npm install && npm run build && cd ../movie-backend && npm install --legacy-peer-deps"
+    buildCommand: "npm install --prefix shared-core && npm run build --prefix shared-core && npm install --prefix movie-backend --legacy-peer-deps"
     startCommand: "cd movie-backend && npm start"
     envVars:
       - key: MONGO_URI

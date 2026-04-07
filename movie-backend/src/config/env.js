@@ -36,8 +36,10 @@ const config = Object.freeze({
   mongoMaxPoolSize: parseNumber(process.env.MONGO_MAX_POOL_SIZE, 20),
   mongoServerSelectionTimeoutMs: parseNumber(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS, 10_000),
   mongoSocketTimeoutMs: parseNumber(process.env.MONGO_SOCKET_TIMEOUT_MS, 45_000),
-  jwtSecret: process.env.JWT_SECRET || 'change-this-secret',
+  jwtSecret: process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-secret-keep-it-local'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-refresh-secret-keep-it-local'),
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   corsOrigins: parseOrigins(process.env.CORS_ORIGINS, defaultOrigins),
   jsonLimit: process.env.JSON_LIMIT || '100kb',
   // Upload limits (multipart/form-data). Used by /api/v1/upload.
@@ -53,12 +55,34 @@ const config = Object.freeze({
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
-  cloudinaryFolder: process.env.CLOUDINARY_FOLDER || 'movie-uploads'
+  cloudinaryFolder: process.env.CLOUDINARY_FOLDER || 'movie-uploads',
+
+  // VNPAY Payment Gateway
+  vnpTmnCode: process.env.VNP_TMNCODE || 'VNBTS001', // Example Sandbox TmnCode
+  vnpHashSecret: process.env.VNP_HASHSECRET || 'SECRET_GOES_HERE',
+  vnpUrl: process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+  vnpReturnUrl: process.env.VNP_RETURNURL || 'http://localhost:3001/api/v1/payment/vnpay-return',
+  vnpIpnUrl: process.env.VNP_IPNURL || 'http://localhost:3001/api/v1/payment/vnpay-ipn',
+  frontendPaymentSuccessUrl: process.env.FRONTEND_PAYMENT_SUCCESS_URL || 'http://localhost:5173/payment/success',
+  frontendPaymentErrorUrl: process.env.FRONTEND_PAYMENT_ERROR_URL || 'http://localhost:5173/payment/error',
 });
 
-if (config.env === 'production' && !config.mongoUri) {
-  console.error('\x1b[31m[ERROR] MONGO_URI is not defined in production environment!\x1b[0m');
-  console.error('\x1b[33m[TIP] Please set MONGO_URI in your dashboard (Render/Vercel/etc.)\x1b[0m');
+if (config.env === 'production') {
+  if (!config.mongoUri) {
+    console.error('\x1b[31m[ERROR] MONGO_URI is not defined in production environment!\x1b[0m');
+  }
+  if (!config.jwtSecret || config.jwtSecret === 'dev-secret-keep-it-local') {
+    console.error('\x1b[31m[ERROR] JWT_SECRET is not defined or using insecure default in production!\x1b[0m');
+  }
+  if (!config.jwtRefreshSecret || config.jwtRefreshSecret === 'dev-refresh-secret-keep-it-local') {
+    console.error('\x1b[31m[ERROR] JWT_REFRESH_SECRET is not defined or using insecure default in production!\x1b[0m');
+  }
+  
+  if (!config.mongoUri || !config.jwtSecret || config.jwtSecret === 'dev-secret-keep-it-local' || !config.jwtRefreshSecret || config.jwtRefreshSecret === 'dev-refresh-secret-keep-it-local') {
+    console.error('\x1b[33m[TIP] Please set MONGO_URI, JWT_SECRET and JWT_REFRESH_SECRET in your dashboard (Render/Vercel/etc.)\x1b[0m');
+    // In production, we should ideally exit if critical secrets are missing
+    // process.exit(1); 
+  }
 }
 
 module.exports = config;

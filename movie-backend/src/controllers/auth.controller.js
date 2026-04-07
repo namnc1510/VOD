@@ -58,8 +58,12 @@ async function changePassword(req, res, next) {
 
 async function refresh(req, res, next) {
   try {
-    // Basic mock implementation for refresh token
-    return res.status(200).json(successResponse("mock-refresh-token"));
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json(errorResponse('Refresh Token is required', 400));
+    }
+    const result = await authService.refresh(refreshToken);
+    return res.status(200).json(successResponse(result));
   } catch (error) {
     return next(error);
   }

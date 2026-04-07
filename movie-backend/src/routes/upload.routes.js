@@ -14,37 +14,6 @@ const { errorResponse, successResponse } = require('../utils/api-response');
 
 const router = express.Router();
 
-const uploadRoot = path.join(__dirname, '../../data/uploads');
-
-function ensureUploadDir() {
-  fs.mkdirSync(uploadRoot, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    try {
-      ensureUploadDir();
-      cb(null, uploadRoot);
-    } catch (err) {
-      cb(err, uploadRoot);
-    }
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || '').slice(0, 16).toLowerCase();
-    const name = `${crypto.randomUUID()}${ext}`;
-    cb(null, name);
-  },
-});
-
-function fileFilter(_req, file, cb) {
-  const type = String(file?.mimetype || '').toLowerCase();
-  // Allow images + videos only.
-  if (type.startsWith('image/') || type.startsWith('video/')) {
-    return cb(null, true);
-  }
-  return cb(new Error('Unsupported file type'), false);
-}
-
 function createUpload() {
   const limits = {
     // Videos can be large; adjust via env: UPLOAD_MAX_FILE_SIZE_MB.
@@ -52,7 +21,12 @@ function createUpload() {
   };
 
   if (!cloudinaryConfig.enabled) {
-    return multer({ storage, limits, fileFilter });
+    // If Cloudinary is disabled, return a multer that will error out on upload attempts.
+    return multer({
+      storage: multer.memoryStorage(),
+      limits: { fileSize: 0 },
+      fileFilter: (_req, _file, cb) => cb(new Error('Cloudinary is not configured. Upload disabled.')),
+    });
   }
 
   const cloudinaryStorage = new CloudinaryStorage({
@@ -81,7 +55,7 @@ router.post(
   (req, res) => {
     const file = req.file;
     if (!file) {
-      return res.status(400).json(errorResponse('No file uploaded'));
+      return res.status(400).json(errorResponse('No file uploaded or upload failed'));
     }
 
     // When using CloudinaryStorage, multer exposes `path` as the hosted URL.
@@ -89,18 +63,17 @@ router.post(
       ? file.path
       : null;
 
+    if (!cloudUrl) {
+      return res.status(500).json(errorResponse('Failed to retrieve secure upload URL'));
+    }
+
     return res.status(201).json(
       successResponse({
-        url: cloudUrl || (() => {
-          const publicPath = `/uploads/${file.filename}`;
-          const baseUrl = `${req.protocol}://${req.get('host')}`;
-          return `${baseUrl}${publicPath}`;
-        })(),
-        path: cloudUrl ? null : `/uploads/${file.filename}`,
+        url: cloudUrl,
         filename: file.filename || null,
         mimetype: file.mimetype,
         size: file.size,
-        provider: cloudUrl ? 'cloudinary' : 'local',
+        provider: 'cloudinary',
       }),
     );
   },

@@ -47,6 +47,29 @@ function signToken(user) {
   );
 }
 
+function signRefreshToken(user) {
+  return jwt.sign(
+    {
+      sub: user._id.toString()
+    },
+    config.jwtRefreshSecret,
+    {
+      expiresIn: config.jwtRefreshExpiresIn
+    }
+  );
+}
+
+async function generateTokens(user) {
+  const accessToken = signToken(user);
+  const refreshToken = signRefreshToken(user);
+  
+  // Store hashed refresh token
+  const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+  await User.findByIdAndUpdate(user._id, { refreshTokenHash });
+  
+  return { accessToken, refreshToken };
+}
+
 async function register(payload) {
   const email = payload.email.toLowerCase();
   const existingUser = await User.findOne({ email }).lean();
@@ -64,11 +87,12 @@ async function register(payload) {
     passwordHash
   });
 
-  const token = signToken(user);
+  const { accessToken, refreshToken } = await generateTokens(user);
 
   return {
-    accessToken: token,
-    token,
+    accessToken,
+    refreshToken,
+    token: accessToken,
     user: toSafeUser(user)
   };
 }
@@ -86,11 +110,12 @@ async function login(payload) {
     throw new HttpError(401, 'Invalid email or password');
   }
 
-  const token = signToken(user);
+  const { accessToken, refreshToken } = await generateTokens(user);
 
   return {
-    accessToken: token,
-    token,
+    accessToken,
+    refreshToken,
+    token: accessToken,
     user: toSafeUser(user)
   };
 }
@@ -148,6 +173,27 @@ function verifyToken(token) {
   }
 }
 
+async function refresh(refreshToken) {
+  try {
+    const decoded = jwt.verify(refreshToken, config.jwtRefreshSecret);
+    const user = await User.findById(decoded.sub).select('+refreshTokenHash');
+    
+    if (!user || !user.refreshTokenHash) {
+      throw new Error('User not found or no refresh token stored');
+    }
+    
+    const isMatched = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+    if (!isMatched) {
+      throw new Error('Invalid refresh token');
+    }
+    
+    // Generate new tokens (Rotation)
+    return await generateTokens(user);
+  } catch (error) {
+    throw new HttpError(401, 'Invalid or expired refresh token');
+  }
+}
+
 const { OAuth2Client } = require('google-auth-library');
 let googleClient = null;
 
@@ -194,10 +240,12 @@ async function loginWithGoogle(idToken) {
   if (user.status !== 'active') {
     throw new HttpError(403, 'Your account is disabled');
   }
-
-  const token = generateToken(user);
+  
+  const { accessToken, refreshToken } = await generateTokens(user);
   return {
-    token,
+    accessToken,
+    refreshToken,
+    token: accessToken,
     user: toSafeUser(user)
   };
 }
@@ -210,5 +258,6 @@ module.exports = {
   updateProfile,
   deleteAccount,
   verifyToken,
+  refresh,
   loginWithGoogle
 };

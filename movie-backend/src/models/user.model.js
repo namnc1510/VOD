@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false
     },
+    refreshTokenHash: {
+      type: String,
+      select: false
+    },
     role: {
       type: String,
       enum: ['user', 'admin', 'editor', 'moderator', 'super'],

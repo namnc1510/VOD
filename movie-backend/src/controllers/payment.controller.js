@@ -22,15 +22,43 @@ async function updatePlans(req, res, next) {
 async function checkout(req, res, next) {
   try {
     const { plan, billingCycle } = req.body;
-    // req.auth contains decoded JWT which includes userId
     const userId = req.auth ? req.auth.userId : (req.user ? req.user._id : null);
     if (!userId) {
       throw new Error('User ID not found in authorized request');
     }
-    const result = await paymentService.processCheckout(userId, plan, billingCycle);
-    return res.status(200).json(successResponse(result, 'Payment successful. Account upgraded.'));
+
+    const ipAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const result = await paymentService.processCheckout(userId, plan, billingCycle, ipAddr);
+    return res.status(200).json(successResponse(result));
   } catch (error) {
     return next(error);
+  }
+}
+
+async function vnpayReturn(req, res, next) {
+  try {
+    const result = await paymentService.validateVnpayCallback(req.query);
+    const config = require('../config/env');
+    
+    if (result.success) {
+      return res.redirect(config.frontendPaymentSuccessUrl);
+    } else {
+      return res.redirect(`${config.frontendPaymentErrorUrl}?status=${result.status}`);
+    }
+  } catch (error) {
+    const config = require('../config/env');
+    console.error('VNPAY Return Error:', error);
+    return res.redirect(`${config.frontendPaymentErrorUrl}?error=verification_failed`);
+  }
+}
+
+async function vnpayIpn(req, res, next) {
+  try {
+    const result = await paymentService.validateVnpayCallback(req.query);
+    return res.status(200).json({ RspCode: '00', Message: 'Confirm success' });
+  } catch (error) {
+    console.error('VNPAY IPN Error:', error);
+    return res.status(200).json({ RspCode: '99', Message: 'Unknown error' });
   }
 }
 
@@ -67,6 +95,8 @@ module.exports = {
   updatePlans,
   getAnalytics,
   checkout,
+  vnpayReturn,
+  vnpayIpn,
   listTransactions,
   updateTransaction,
 };

@@ -33,9 +33,7 @@ app.use(
         return callback(null, true);
       }
 
-      const isVercel = origin && origin.endsWith('.vercel.app');
-      
-      if (config.env === 'development' || config.corsOrigins.includes('*') || config.corsOrigins.includes(origin) || isVercel) {
+      if (config.env === 'development' || config.corsOrigins.includes('*') || config.corsOrigins.includes(origin)) {
         return callback(null, true);
       }
 
