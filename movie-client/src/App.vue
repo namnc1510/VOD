@@ -9,16 +9,25 @@ const settingsStore = useSettingsStore();
 </script>
 
 <template>
-  <div class="layout-container flex w-full transition-all" :class="settingsStore.layout === 'side' ? 'flex-col xl:flex-row h-screen overflow-hidden' : 'flex-col min-h-screen'">
+  <div
+    class="layout-container flex w-full bg-slate-50 text-slate-900 transition-colors dark:bg-background-dark dark:text-slate-100"
+    :class="settingsStore.layout === 'side' ? 'h-screen flex-col overflow-hidden xl:flex-row' : 'min-h-screen flex-col'"
+  >
     
     <AppHeader v-if="settingsStore.layout === 'top'" />
     <AppHeader v-if="settingsStore.layout === 'side'" class="xl:hidden shrink-0" />
     
     <AppSidebar v-if="settingsStore.layout === 'side'" class="hidden xl:flex" />
     
-    <div class="flex-1 flex flex-col min-w-0" :class="settingsStore.layout === 'side' ? 'overflow-y-auto h-full' : 'h-full'">
-      <main class="flex-1 px-8 md:px-24 pt-10 pb-20">
-        <RouterView />
+    <div class="flex-1 flex min-w-0 flex-col" :class="settingsStore.layout === 'side' ? 'h-full overflow-y-auto' : 'h-full'">
+      <main class="flex-1">
+        <div
+          :class="settingsStore.layout === 'top'
+            ? 'mx-auto w-full max-w-[1440px] px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pt-10'
+            : 'w-full px-6 pb-16 pt-8 md:px-8 xl:px-10'"
+        >
+          <RouterView />
+        </div>
       </main>
       <AppFooter />
     </div>

@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+
 import { api, getApiErrorMessage } from '../services/api';
+import { useAuthStore } from '../stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -11,31 +12,6 @@ const currentPlan = computed(() => authStore.user?.plan || 'free');
 
 const planRanks = { free: 0, standard: 1, premium: 2, ultimate: 3 };
 const currentPlanRank = computed(() => planRanks[currentPlan.value] || 0);
-
-function isSubscribed(planId) {
-  return currentPlanRank.value >= planRanks[planId];
-}
-
-function getButtonText(planId) {
-  if (currentPlan.value === planId) return 'Current Plan';
-  if (currentPlanRank.value > planRanks[planId]) return 'Already Subscribed';
-  if (planId === 'premium') return 'Get Premium';
-  return `Select ${planId.charAt(0).toUpperCase() + planId.slice(1)}`;
-}
-
-const checkoutStartDate = computed(() => {
-  return new Date().toLocaleDateString('vi-VN');
-});
-
-const checkoutEndDate = computed(() => {
-  const d = new Date();
-  if (isAnnual.value) {
-    d.setFullYear(d.getFullYear() + 1);
-  } else {
-    d.setMonth(d.getMonth() + 1);
-  }
-  return d.toLocaleDateString('vi-VN');
-});
 
 const isAnnual = ref(false);
 const showCheckout = ref(false);
@@ -51,6 +27,59 @@ const plans = ref({
 });
 const plansLoaded = ref(false);
 
+function isSubscribed(planId) {
+  return currentPlanRank.value >= planRanks[planId];
+}
+
+function getButtonText(planId) {
+  if (currentPlan.value === planId) return 'Gói hiện tại';
+  if (currentPlanRank.value > planRanks[planId]) return 'Đã sở hữu';
+  return `Chọn gói ${planId.charAt(0).toUpperCase() + planId.slice(1)}`;
+}
+
+const checkoutStartDate = computed(() => new Date().toLocaleDateString('vi-VN'));
+
+const checkoutEndDate = computed(() => {
+  const date = new Date();
+  if (isAnnual.value) date.setFullYear(date.getFullYear() + 1);
+  else date.setMonth(date.getMonth() + 1);
+  return date.toLocaleDateString('vi-VN');
+});
+
+const planCards = computed(() => [
+  {
+    id: 'standard',
+    label: 'Standard',
+    accent: 'slate',
+    badge: 'Khởi đầu',
+    description: 'Xem phim HD cơ bản cho một thiết bị, phù hợp nhu cầu cá nhân.',
+    features: ['720p HD', '1 thiết bị', 'Kho phim cơ bản', 'Streaming ổn định']
+  },
+  {
+    id: 'premium',
+    label: 'Premium',
+    accent: 'primary',
+    badge: 'Phổ biến nhất',
+    description: 'Gói cân bằng giữa chất lượng, giá tiền và trải nghiệm không quảng cáo.',
+    features: ['1080p Full HD', '2 thiết bị', 'Không quảng cáo', 'Ưu tiên nội dung VIP']
+  },
+  {
+    id: 'ultimate',
+    label: 'Ultimate',
+    accent: 'amber',
+    badge: 'Cao cấp nhất',
+    description: 'Toàn bộ trải nghiệm 4K Ultra HD cho người dùng xem phim thường xuyên.',
+    features: ['4K Ultra HD', '4 thiết bị', 'Không quảng cáo', 'Quyền lợi xem trước']
+  }
+]);
+
+const selectedPlan = computed(() => planCards.value.find((plan) => plan.id === selectedPlanId.value) || null);
+const selectedPrice = computed(() => {
+  const id = selectedPlanId.value;
+  if (!id || !plans.value[id]) return 0;
+  return isAnnual.value ? plans.value[id].annual : plans.value[id].monthly;
+});
+
 onMounted(async () => {
   try {
     const res = await api.get('/payment/plans');
@@ -65,7 +94,7 @@ onMounted(async () => {
 });
 
 function formatPrice(amount) {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 }
 
 function handleSelectPlan(planId) {
@@ -73,9 +102,9 @@ function handleSelectPlan(planId) {
     router.push('/login?redirect=/pricing');
     return;
   }
-  if (isSubscribed(planId)) {
-    return;
-  }
+
+  if (isSubscribed(planId)) return;
+
   selectedPlanId.value = planId;
   paymentSuccess.value = false;
   checkoutError.value = '';
@@ -85,180 +114,317 @@ function handleSelectPlan(planId) {
 async function processPayment() {
   processingPayment.value = true;
   checkoutError.value = '';
-  try {
-     const res = await api.post('/payment/checkout', {
-       plan: selectedPlanId.value,
-       billingCycle: isAnnual.value ? 'annual' : 'monthly'
-     });
-     paymentSuccess.value = true;
-     
-     // Update user session natively
-     if (res.data?.data) {
-       authStore.setSession(authStore.token, {
-         ...authStore.user,
-         plan: res.data.data.plan,
-         planStartedAt: res.data.data.planStartedAt,
-         planExpiresAt: res.data.data.planExpiresAt
-       });
-     }
 
-     setTimeout(() => {
-       showCheckout.value = false;
-       router.push('/profile');
-     }, 2000);
+  try {
+    const res = await api.post('/payment/checkout', {
+      plan: selectedPlanId.value,
+      billingCycle: isAnnual.value ? 'annual' : 'monthly'
+    });
+    const checkoutData = res.data?.data || {};
+
+    if (checkoutData.status === 'redirect' && checkoutData.paymentUrl) {
+      window.location.href = checkoutData.paymentUrl;
+      return;
+    }
+
+    if (checkoutData.status === 'success') {
+      paymentSuccess.value = true;
+      await authStore.refreshMe();
+
+      window.setTimeout(() => {
+        showCheckout.value = false;
+        router.push('/profile');
+      }, 1500);
+      return;
+    }
+
+    checkoutError.value = 'Không thể khởi tạo phiên thanh toán.';
   } catch (err) {
-     checkoutError.value = getApiErrorMessage(err, 'Payment failed');
+    checkoutError.value = getApiErrorMessage(err, 'Thanh toán thất bại');
   } finally {
-     processingPayment.value = false;
+    processingPayment.value = false;
   }
 }
 </script>
 
 <template>
-  <div class="relative flex-1 flex flex-col items-center justify-center py-6 px-4 md:px-8 bg-[#F4F7F9] dark:bg-[#0A0E17] min-h-[calc(100vh-[header-height]-[footer-height]-2rem)]">
-    <!-- Header -->
-    <div class="relative z-10 text-center max-w-2xl mx-auto mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
-      
-      <!-- Billing Toggle matching image exactly -->
-      <div class="flex items-center justify-center gap-3">
-        <span :class="['text-[13px] font-black tracking-wide transition-colors', !isAnnual ? 'text-[#2B384A] dark:text-white' : 'text-slate-400']">Monthly</span>
-        <button 
-          @click="isAnnual = !isAnnual"
-          class="relative w-[46px] h-[24px] rounded-full bg-[#E2E8F0] dark:bg-slate-700 transition-colors focus:outline-none"
+  <div class="page-shell">
+    <section class="page-hero">
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-end">
+        <div class="space-y-6">
+          <span class="page-kicker">
+            <span class="material-symbols-outlined text-base">workspace_premium</span>
+            Pricing
+          </span>
+          <div class="space-y-4">
+            <h1 class="page-title">Chọn gói xem phim phù hợp và nâng cấp trực tiếp qua VNPAY.</h1>
+            <p class="page-copy">
+              Trang gói dịch vụ đã được sắp lại để dễ so sánh lợi ích, rõ giá theo chu kỳ và liền mạch hơn khi chuyển sang bước thanh toán.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4">
+            <div class="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <span class="text-sm font-bold text-slate-700 dark:text-slate-200" :class="!isAnnual ? 'text-slate-900 dark:text-white' : 'opacity-55'">Hàng tháng</span>
+              <button type="button" class="relative h-7 w-14 rounded-full bg-slate-200 dark:bg-slate-700" @click="isAnnual = !isAnnual">
+                <span
+                  class="absolute top-1/2 size-5 -translate-y-1/2 rounded-full bg-primary transition-transform"
+                  :class="isAnnual ? 'translate-x-8' : 'translate-x-1'"
+                ></span>
+              </button>
+              <span class="text-sm font-bold text-slate-700 dark:text-slate-200" :class="isAnnual ? 'text-slate-900 dark:text-white' : 'opacity-55'">
+                Hàng năm
+              </span>
+            </div>
+            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+              Tiết kiệm hơn với chu kỳ năm
+            </span>
+          </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          <article class="panel-muted p-5">
+            <p class="control-label">Gói hiện tại</p>
+            <p class="text-2xl font-black text-slate-900 dark:text-white">{{ currentPlan.toUpperCase() }}</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Đồng bộ trực tiếp từ hồ sơ tài khoản.</p>
+          </article>
+          <article class="panel-muted p-5">
+            <p class="control-label">Billing</p>
+            <p class="text-2xl font-black text-slate-900 dark:text-white">{{ isAnnual ? 'Annual' : 'Monthly' }}</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Bạn có thể chuyển đổi trước khi thanh toán.</p>
+          </article>
+          <article class="panel-muted p-5">
+            <p class="control-label">Thanh toán</p>
+            <p class="text-2xl font-black text-slate-900 dark:text-white">VNPAY</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Checkout trả về backend và đồng bộ lại hồ sơ.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-3">
+      <article
+        v-for="plan in planCards"
+        :key="plan.id"
+        class="panel-surface relative overflow-hidden p-6 sm:p-7"
+        :class="
+          plan.accent === 'primary'
+            ? 'ring-2 ring-primary/35 shadow-[0_28px_80px_-42px_rgba(19,91,236,0.55)]'
+            : plan.accent === 'amber'
+              ? 'bg-slate-950 text-slate-100 dark:bg-slate-950'
+              : ''
+        "
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <span
+              class="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em]"
+              :class="
+                plan.accent === 'primary'
+                  ? 'bg-primary/12 text-primary'
+                  : plan.accent === 'amber'
+                    ? 'bg-amber-500/18 text-amber-300'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+              "
+            >
+              {{ plan.badge }}
+            </span>
+            <h2 class="mt-5 text-3xl font-black" :class="plan.accent === 'amber' ? 'text-white' : 'text-slate-900 dark:text-white'">
+              {{ plan.label }}
+            </h2>
+            <p class="mt-3 text-sm leading-6" :class="plan.accent === 'amber' ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'">
+              {{ plan.description }}
+            </p>
+          </div>
+
+          <div
+            class="flex h-13 w-13 items-center justify-center rounded-2xl"
+            :class="
+              plan.accent === 'primary'
+                ? 'bg-primary text-white'
+                : plan.accent === 'amber'
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+            "
+          >
+            <span class="material-symbols-outlined text-[22px]">workspace_premium</span>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <p class="text-4xl font-black tracking-tight" :class="plan.accent === 'amber' ? 'text-white' : 'text-slate-900 dark:text-white'">
+            {{ formatPrice(isAnnual ? plans[plan.id].annual : plans[plan.id].monthly) }}
+          </p>
+          <p class="mt-2 text-sm font-semibold" :class="plan.accent === 'amber' ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'">
+            {{ isAnnual ? 'Theo năm' : 'Theo tháng' }}
+          </p>
+        </div>
+
+        <div class="mt-8 space-y-3">
+          <div
+            v-for="feature in plan.features"
+            :key="feature"
+            class="flex items-center gap-3 rounded-2xl px-4 py-3"
+            :class="plan.accent === 'amber' ? 'bg-white/6 text-slate-200' : 'bg-slate-50 text-slate-700 dark:bg-slate-900/75 dark:text-slate-200'"
+          >
+            <span
+              class="flex h-8 w-8 items-center justify-center rounded-full"
+              :class="
+                plan.accent === 'primary'
+                  ? 'bg-primary/12 text-primary'
+                  : plan.accent === 'amber'
+                    ? 'bg-amber-500/18 text-amber-300'
+                    : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+              "
+            >
+              <span class="material-symbols-outlined text-[18px]">check</span>
+            </span>
+            <span class="text-sm font-bold">{{ feature }}</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="mt-8 w-full rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-[0.18em] transition-all"
+          :class="
+            isSubscribed(plan.id)
+              ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+              : plan.accent === 'primary'
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/92'
+                : plan.accent === 'amber'
+                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400'
+                  : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white'
+          "
+          :disabled="isSubscribed(plan.id) || !plansLoaded"
+          @click="handleSelectPlan(plan.id)"
         >
-          <div :class="['absolute top-1/2 -translate-y-1/2 size-4 rounded-full bg-[#C0C86D] transition-transform duration-300 shadow-md', isAnnual ? 'translate-x-[26px]' : 'translate-x-[4px]']"></div>
+          {{ plansLoaded ? getButtonText(plan.id) : 'Đang tải giá...' }}
         </button>
-        <span :class="['text-[13px] font-black tracking-wide transition-colors flex items-center gap-2', isAnnual ? 'text-[#2B384A] dark:text-white' : 'text-slate-400']">
-          Annually <span class="bg-[#DDF4E4] text-[#2EAI5B] text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-widest text-[#249553]">Save 20%</span>
-        </span>
-      </div>
-    </div>
-    
-    <!-- Pricing Cards Grid -->
-    <div class="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch max-w-5xl mx-auto w-full">
-      
-      <!-- STANDARD Plan -->
-      <div class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-none flex flex-col">
-         <h3 class="text-xl font-black text-[#3F4B5B] dark:text-white mb-3 uppercase tracking-widest">Standard</h3>
-         <p class="text-[#7A8A9E] mb-6 text-[13px] leading-relaxed font-bold">720p resolution. Good for mobile devices and small screens.</p>
-         <div class="text-[36px] font-black text-[#2B384A] dark:text-white mb-8 tracking-tight whitespace-nowrap">
-            {{ isAnnual ? formatPrice(plans.standard.annual) : formatPrice(plans.standard.monthly) }}
-            <span class="text-[12px] text-[#7A8A9E] font-bold ml-1">{{ isAnnual ? '/năm' : '/tháng' }}</span>
-         </div>
-         <ul class="space-y-4 mb-8 flex-1 text-[#3F4B5B] dark:text-slate-300 font-bold text-[13px]">
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#10B981] text-[#10B981]"><span class="material-symbols-outlined text-[14px] font-black">check</span></span> 720p HD Quality</li>
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#10B981] text-[#10B981]"><span class="material-symbols-outlined text-[14px] font-black">check</span></span> Watch on 1 Device</li>
-            <li class="flex items-center gap-3 text-[#B0BCC9]"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#E2E8F0] text-[#E2E8F0]"><span class="material-symbols-outlined text-[14px] font-black">close</span></span> Ad-free viewing</li>
-            <li class="flex items-center gap-3 text-[#B0BCC9]"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#E2E8F0] text-[#E2E8F0]"><span class="material-symbols-outlined text-[14px] font-black">close</span></span> 4K Ultra HD</li>
-         </ul>
-         <button @click="handleSelectPlan('standard')" :disabled="isSubscribed('standard')" :class="[isSubscribed('standard') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#E5E7EB] dark:hover:bg-slate-700']" class="w-full py-4 rounded-xl bg-[#F4F7F9] dark:bg-slate-800 text-[#1F2937] dark:text-white font-black uppercase tracking-widest transition-colors text-xs">{{ getButtonText('standard') }}</button>
-      </div>
+      </article>
+    </section>
 
-      <!-- PREMIUM Plan -->
-      <div class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border-[3px] border-[#C0C86D] shadow-[0_20px_50px_rgba(192,200,109,0.15)] flex flex-col relative transform lg:-translate-y-2">
-         <!-- Most Popular Pill -->
-         <div class="absolute -top-[14px] left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#C0C86D] to-[#E3EABC] text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Most Popular</div>
-         
-         <h3 class="text-xl font-black text-[#A5B345] mb-3 uppercase tracking-widest">Premium</h3>
-         <p class="text-[#7A8A9E] mb-6 text-[13px] leading-relaxed font-bold">1080p resolution. Best value for everyday home viewing.</p>
-         <div class="text-[36px] font-black text-[#2B384A] dark:text-white mb-8 tracking-tight whitespace-nowrap">
-            {{ isAnnual ? formatPrice(plans.premium.annual) : formatPrice(plans.premium.monthly) }}
-            <span class="text-[12px] text-[#7A8A9E] font-bold ml-1">{{ isAnnual ? '/năm' : '/tháng' }}</span>
-         </div>
-         <ul class="space-y-4 mb-8 flex-1 text-[#3F4B5B] dark:text-slate-300 font-bold text-[13px]">
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#D4DC8A] text-[#C0C86D]"><span class="material-symbols-outlined text-[14px] font-black text-[#C0C86D]">check</span></span> 1080p Full HD Quality</li>
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#D4DC8A] text-[#C0C86D]"><span class="material-symbols-outlined text-[14px] font-black text-[#C0C86D]">check</span></span> Watch on 2 Devices</li>
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#D4DC8A] text-[#C0C86D]"><span class="material-symbols-outlined text-[14px] font-black text-[#C0C86D]">check</span></span> Ad-free experience</li>
-            <li class="flex items-center gap-3 text-[#B0BCC9]"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#E2E8F0] text-[#E2E8F0]"><span class="material-symbols-outlined text-[14px] font-black">close</span></span> 4K Ultra HD</li>
-         </ul>
-         <button @click="handleSelectPlan('premium')" :disabled="isSubscribed('premium')" :class="[isSubscribed('premium') ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90']" class="w-full py-4 rounded-xl bg-gradient-to-r from-[#BBC55E] to-[#E3EABC] text-white font-black uppercase tracking-widest transition-all text-xs shadow-md">{{ getButtonText('premium') }}</button>
-      </div>
-
-      <!-- ULTIMATE Plan -->
-      <div class="bg-[#111621] p-8 rounded-[2rem] shadow-2xl flex flex-col relative overflow-hidden">
-         <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-[#FF9900]/5 pointer-events-none"></div>
-         <h3 class="text-xl font-black text-[#FF9E0D] mb-3 uppercase tracking-widest relative z-10">Ultimate</h3>
-         <p class="text-[#899AB0] mb-6 text-[13px] leading-relaxed font-bold relative z-10">4K Ultra HD. The absolute ultimate home theater experience.</p>
-         <div class="text-[36px] font-black text-white mb-8 tracking-tight whitespace-nowrap relative z-10">
-            {{ isAnnual ? formatPrice(plans.ultimate.annual) : formatPrice(plans.ultimate.monthly) }}
-            <span class="text-[12px] text-[#899AB0] font-bold ml-1">{{ isAnnual ? '/năm' : '/tháng' }}</span>
-         </div>
-         <ul class="space-y-4 mb-8 flex-1 text-[#D1DBE6] font-bold text-[13px] relative z-10">
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#FF9E0D] text-[#FF9E0D]"><span class="material-symbols-outlined text-[14px] font-black">check</span></span> 4K Ultra HD + HDR</li>
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#FF9E0D] text-[#FF9E0D]"><span class="material-symbols-outlined text-[14px] font-black">check</span></span> Watch on 4 Devices</li>
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#FF9E0D] text-[#FF9E0D]"><span class="material-symbols-outlined text-[14px] font-black">check</span></span> Ad-free experience</li>
-            <li class="flex items-center gap-3"><span class="flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 border-[#FF9E0D] text-[#FF9E0D]"><span class="material-symbols-outlined text-[14px] font-black">check</span></span> Offline downloads</li>
-         </ul>
-         <button @click="handleSelectPlan('ultimate')" :disabled="isSubscribed('ultimate')" :class="[isSubscribed('ultimate') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#F29306] shadow-[#FF9E0D]/20 shadow-lg']" class="w-full py-4 rounded-xl bg-[#FF9E0D] text-[#111621] font-black uppercase tracking-widest transition-all relative z-10 text-xs">{{ getButtonText('ultimate') }}</button>
-      </div>
-    </div>
-
-    <!-- Mock Checkout Modal -->
-    <div v-if="showCheckout" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in max-h-screen overflow-y-auto">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 my-auto">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-           <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary">credit_card</span>
-              Secure Checkout
-           </h3>
-           <button v-if="!processingPayment && !paymentSuccess" @click="showCheckout = false" class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-             <span class="material-symbols-outlined">close</span>
-           </button>
+    <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <article class="panel-surface p-6 sm:p-7">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Lợi ích sau khi nâng cấp</h2>
+            <p class="section-copy">Những quyền lợi chính sẽ được kích hoạt ngay khi backend xác nhận thanh toán.</p>
+          </div>
         </div>
-        
-        <div class="p-6">
-           <div v-if="paymentSuccess" class="py-8 text-center flex flex-col items-center">
-              <div class="size-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-4 animate-[bounce_1s_ease-in-out]">
-                 <span class="material-symbols-outlined text-3xl font-bold">check</span>
+
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+          <div class="panel-muted p-5">
+            <p class="control-label">Truy cập nội dung</p>
+            <p class="text-base font-bold text-slate-900 dark:text-white">Mở khóa phim VIP và phim độc quyền</p>
+          </div>
+          <div class="panel-muted p-5">
+            <p class="control-label">Chất lượng</p>
+            <p class="text-base font-bold text-slate-900 dark:text-white">HD, Full HD hoặc 4K theo từng gói</p>
+          </div>
+          <div class="panel-muted p-5">
+            <p class="control-label">Thiết bị</p>
+            <p class="text-base font-bold text-slate-900 dark:text-white">Số thiết bị xem đồng thời tăng theo gói</p>
+          </div>
+          <div class="panel-muted p-5">
+            <p class="control-label">Đồng bộ hồ sơ</p>
+            <p class="text-base font-bold text-slate-900 dark:text-white">Trạng thái gói được cập nhật lại ngay trong client</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel-surface p-6 sm:p-7">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Thông tin thanh toán</h2>
+            <p class="section-copy">Luồng checkout hiện trả về backend và redirect lại client qua trang thành công hoặc lỗi.</p>
+          </div>
+        </div>
+
+        <div class="mt-6 space-y-4">
+          <div class="status-card status-info">
+            <span class="material-symbols-outlined text-[18px]">sync_alt</span>
+            <span>Client gọi `/payment/checkout`, sau đó backend điều phối redirect sang VNPAY.</span>
+          </div>
+          <div class="status-card status-success">
+            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+            <span>Khi thành công, hồ sơ người dùng sẽ được refresh để hiển thị đúng plan mới.</span>
+          </div>
+          <div class="status-card status-warning">
+            <span class="material-symbols-outlined text-[18px]">payments</span>
+            <span>Nếu giao dịch thất bại, không có thay đổi nào được áp dụng cho tài khoản.</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div v-if="showCheckout" class="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div class="panel-surface w-full max-w-lg overflow-hidden p-6 sm:p-7">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Xác nhận thanh toán</h2>
+            <p class="section-copy">Kiểm tra lại gói và chu kỳ trước khi chuyển sang VNPAY.</p>
+          </div>
+          <button
+            v-if="!processingPayment && !paymentSuccess"
+            type="button"
+            class="action-ghost min-w-[48px] px-3"
+            @click="showCheckout = false"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div v-if="paymentSuccess" class="mt-6 text-center">
+          <div class="mx-auto flex size-18 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <span class="material-symbols-outlined text-4xl">check_circle</span>
+          </div>
+          <h3 class="mt-5 text-2xl font-black text-slate-900 dark:text-white">Thanh toán thành công</h3>
+          <p class="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
+            Gói {{ selectedPlan?.label || selectedPlanId }} đã được kích hoạt. Hệ thống đang chuyển bạn về trang hồ sơ.
+          </p>
+        </div>
+
+        <template v-else>
+          <div class="mt-6 rounded-[24px] border border-primary/18 bg-primary/8 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.2em] text-primary">{{ selectedPlan?.label || selectedPlanId }}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                  {{ isAnnual ? 'Chu kỳ năm' : 'Chu kỳ tháng' }}
+                </p>
               </div>
-              <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Payment Successful!</h4>
-              <p class="text-slate-500 dark:text-slate-400">Your account has been upgraded to {{ selectedPlanId.toUpperCase() }}. Redirecting...</p>
-           </div>
-           
-           <div v-else>
-               <div class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-4 flex justify-between tracking-tight text-slate-800 dark:text-white">
-                 <div>
-                    <div class="font-bold uppercase tracking-widest text-xs text-primary mb-1">{{ selectedPlanId }} Plan</div>
-                    <div class="text-sm font-semibold opacity-80">{{ isAnnual ? 'Annual Billing' : 'Monthly Billing' }}</div>
-                 </div>
-                 <div class="text-right">
-                    <div class="text-2xl font-black">${{ isAnnual ? plans[selectedPlanId].annual : plans[selectedPlanId].monthly }}</div>
-                 </div>
-               </div>
+              <p class="text-2xl font-black text-slate-900 dark:text-white">{{ formatPrice(selectedPrice) }}</p>
+            </div>
+          </div>
 
-               <div class="mb-6 flex justify-between text-sm px-2">
-                 <div>
-                   <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Thời gian bắt đầu</div>
-                   <div class="font-bold text-slate-800 dark:text-white">{{ checkoutStartDate }}</div>
-                 </div>
-                 <div class="text-right">
-                   <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Thời gian kết thúc</div>
-                   <div class="font-bold text-slate-800 dark:text-white">{{ checkoutEndDate }}</div>
-                 </div>
-               </div>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div class="panel-muted p-4">
+              <p class="control-label">Bắt đầu</p>
+              <p class="text-base font-bold text-slate-900 dark:text-white">{{ checkoutStartDate }}</p>
+            </div>
+            <div class="panel-muted p-4">
+              <p class="control-label">Kết thúc</p>
+              <p class="text-base font-bold text-slate-900 dark:text-white">{{ checkoutEndDate }}</p>
+            </div>
+          </div>
 
-               <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-100 p-4 rounded-xl text-sm leading-relaxed mb-6 font-medium border border-blue-100 dark:border-blue-800 text-center">
-                  Bạn đang chuẩn bị nâng cấp gói xem phim <strong>{{ selectedPlanId.toUpperCase() }}</strong> bằng thẻ VNPAY.<br/>
-                  Vui lòng kiểm tra kỹ thông tin trước khi thanh toán.
-               </div>
+          <div v-if="checkoutError" class="status-card status-error mt-5">
+            <span class="material-symbols-outlined text-[18px]">error</span>
+            <span>{{ checkoutError }}</span>
+          </div>
 
-               <form @submit.prevent="processPayment" class="space-y-4">
-                 <div v-if="checkoutError" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg text-sm font-bold border border-red-200 dark:border-red-900/50 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">error</span> {{ checkoutError }}
-                 </div>
+          <div class="status-card status-info mt-5">
+            <span class="material-symbols-outlined text-[18px]">shield</span>
+            <span>Bạn sẽ được chuyển tới cổng VNPAY để hoàn tất giao dịch một cách bảo mật.</span>
+          </div>
 
-                 <div class="pt-4">
-                    <button type="submit" :disabled="processingPayment" class="w-full py-3.5 rounded-xl bg-primary text-white font-bold tracking-wide hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center shadow-lg shadow-primary/20">
-                       <span v-if="processingPayment" class="material-symbols-outlined animate-spin mr-2">progress_activity</span>
-                       {{ processingPayment ? 'Đang thanh toán bằng VNPAY...' : 'Thanh Toán Ngay qua VNPAY' }}
-                    </button>
-                 </div>
-              </form>
-              <p class="text-[11px] text-center text-slate-400 mt-4 leading-relaxed font-medium">
-                 Giao dịch trực tiếp với hệ thống Backend thông qua API VNPAY đã được cấu hình. Cảm ơn bạn.
-              </p>
-           </div>
-        </div>
+          <form class="mt-6" @submit.prevent="processPayment">
+            <button type="submit" class="action-primary w-full" :disabled="processingPayment || !selectedPlanId">
+              <span v-if="processingPayment" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+              <span v-else>Tiếp tục thanh toán qua VNPAY</span>
+            </button>
+          </form>
+        </template>
       </div>
     </div>
   </div>

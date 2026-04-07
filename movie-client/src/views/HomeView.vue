@@ -39,6 +39,15 @@ function normalizeFeed(input) {
   return result;
 }
 
+function formatNameList(items, fallback = '') {
+  if (!Array.isArray(items) || items.length === 0) return fallback;
+
+  return items
+    .map((item) => (typeof item === 'object' ? item?.name || item?.genre || item?.country : item))
+    .filter(Boolean)
+    .join(' / ') || fallback;
+}
+
 function getContinueWatchingPercent(entry) {
   const durationMinutes = Number(entry?.movie?.durationMinutes);
   const progressSeconds = Number(entry?.progressSeconds);
@@ -79,7 +88,7 @@ const heroMetaParts = computed(() => {
 
   if (hero.type) parts.push(String(hero.type).toLowerCase() === 'series' ? 'Series' : 'Movie');
 
-  const genres = (hero.genres || []).map(g => typeof g === 'object' ? g.name : g).filter(Boolean).join(', ');
+  const genres = formatNameList(hero.genres);
   if (genres) parts.push(genres);
 
   return parts;
@@ -111,11 +120,31 @@ function getHoverCardVars(index) {
 }
 
 const sections = computed(() => [
-  { key: 'trending', title: 'Trending Today', items: feed.value.trending },
-  { key: 'new', title: 'New Releases', items: feed.value.newReleases },
-  { key: 'recommended', title: 'Recommended For You', items: feed.value.recommended },
-  { key: 'top', title: 'Top IMDB', items: feed.value.topImdb }
-]);
+  {
+    key: 'trending',
+    title: 'Trending Today',
+    description: 'Fresh picks based on what viewers are opening right now.',
+    items: feed.value.trending
+  },
+  {
+    key: 'new',
+    title: 'New Releases',
+    description: 'Recently added titles surfaced in a cleaner scrolling rail.',
+    items: feed.value.newReleases
+  },
+  {
+    key: 'recommended',
+    title: 'Recommended For You',
+    description: 'Personalized picks arranged so the list stays readable.',
+    items: feed.value.recommended
+  },
+  {
+    key: 'top',
+    title: 'Top IMDB',
+    description: 'Highest-rated movies grouped in the same layout rhythm.',
+    items: feed.value.topImdb
+  }
+].filter(section => Array.isArray(section.items) && section.items.length > 0));
 
 function setHeroIndex(next) {
   const total = heroSlides.value.length;
@@ -158,7 +187,7 @@ const sectionRefs = ref({});
 function scroll(key, direction) {
   const el = sectionRefs.value[key];
   if (!el) return;
-  const scrollAmount = el.clientWidth * 0.8;
+  const scrollAmount = Math.max(320, el.clientWidth * 0.72);
   el.scrollBy({
     left: direction * scrollAmount,
     behavior: 'smooth'
@@ -203,56 +232,75 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex flex-col">
-    <!-- Hero Section -->
-    <div v-if="loading" class="panel p-8 text-center bg-white dark:bg-slate-800 rounded-xl mb-8">Loading homepage...</div>
-    <div v-else-if="error" class="panel error text-red-500 p-8 bg-red-50 dark:bg-red-900/20 rounded-xl mb-8">{{ error }}</div>
+  <div class="flex flex-col gap-14 lg:gap-16">
+    <div v-if="loading" class="rounded-[28px] border border-slate-200 bg-white px-8 py-14 text-center text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Loading homepage...</div>
+    <div v-else-if="error" class="rounded-[28px] border border-red-200 bg-red-50 px-8 py-14 text-center text-red-500 shadow-sm dark:border-red-900/30 dark:bg-red-900/20">{{ error }}</div>
 
     <template v-else>
-      <div v-if="activeHero" class="@container mb-12">
+      <section v-if="activeHero">
         <div
-          class="relative min-h-[520px] overflow-hidden rounded-xl bg-slate-900 shadow-2xl group"
+          class="group relative overflow-hidden rounded-[32px] border border-slate-200/70 bg-slate-950 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.85)] dark:border-white/10"
           @mouseenter="stopHeroAutoplay"
           @mouseleave="startHeroAutoplay"
         >
-          <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" :style="{ backgroundImage: `linear-gradient(to right, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.1) 100%), linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 40%), url(${activeHero.backdropUrl || activeHero.posterUrl})` }"></div>
-          <div class="relative flex h-full min-h-[460px] md:min-h-[520px] flex-col justify-center px-6 md:px-16 pt-8 pb-16 md:pb-8 gap-4 md:gap-6 max-w-3xl z-10">
-            <div class="flex flex-col gap-4">
-              <div class="flex gap-2 items-center">
-                <span class="px-3 py-1 bg-primary/20 backdrop-blur-md text-primary text-xs font-bold rounded-full uppercase tracking-wider">
+          <div class="absolute inset-0">
+            <div class="absolute inset-0 scale-105 bg-cover bg-center blur-[2px] transition-transform duration-700 group-hover:scale-[1.08]" :style="{ backgroundImage: `url(${activeHero.backdropUrl || activeHero.posterUrl})` }"></div>
+            <div class="absolute inset-0" style="background-image: linear-gradient(90deg, rgba(2, 6, 23, 0.94) 0%, rgba(2, 6, 23, 0.78) 34%, rgba(2, 6, 23, 0.3) 70%, rgba(2, 6, 23, 0.14) 100%);"></div>
+            <div class="absolute inset-0" style="background-image: linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0) 32%, rgba(2, 6, 23, 0.66) 100%);"></div>
+          </div>
+          <div class="relative z-10 grid min-h-[480px] lg:min-h-[560px] lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div class="flex flex-col justify-end px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12 xl:px-12">
+              <div class="max-w-[640px]">
+            <div class="flex flex-col gap-5">
+              <div class="mb-1 flex flex-wrap items-center gap-2.5">
+                <span class="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-primary backdrop-blur-md">
                   {{ activeHero.isFeatured ? 'Featured' : 'Most Watched' }}
                 </span>
-                <span class="px-3 py-1 bg-white/10 backdrop-blur-md text-white text-xs font-bold rounded-full uppercase tracking-wider">IMDB {{ activeHero.imdbRating?.toFixed(1) }}</span>
+                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md">IMDB {{ activeHero.imdbRating?.toFixed(1) || 'N/A' }}</span>
               </div>
-              <h1 class="text-white text-3xl sm:text-5xl md:text-7xl font-black leading-tight tracking-tight">
+              <h1 class="max-w-[11ch] text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
                 {{ activeHero.title }}
               </h1>
-              <p class="text-slate-300 text-sm md:text-xl font-normal leading-relaxed line-clamp-3 md:line-clamp-4">
-                {{ activeHero.overview }}
+              <p class="max-w-[36rem] text-sm leading-relaxed text-slate-200 sm:text-base lg:text-lg xl:text-xl">
+                {{ activeHero.overview || 'Discover what everyone is watching on the platform right now.' }}
               </p>
-              <p class="hero-meta text-slate-400 font-medium flex flex-wrap items-center gap-2">
-                <span v-for="(part, idx) in heroMetaParts" :key="`${part}-${idx}`" class="contents">
-                  <span>{{ part }}</span>
+              <div class="flex flex-wrap gap-2.5">
+                <span v-for="(part, idx) in heroMetaParts" :key="`${part}-${idx}`" class="hero-meta-pill rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-sm font-medium text-slate-200 backdrop-blur-md">
+                  {{ part }}
                   <span v-if="idx < heroMetaParts.length - 1">•</span>
                 </span>
-              </p>
+              </div>
             </div>
-            <div class="flex flex-col sm:flex-row flex-wrap gap-4 mt-4 w-full sm:w-auto">
-              <RouterLink :to="`/watch/${activeHero.slug}`" class="flex w-full sm:w-auto min-w-[140px] items-center justify-center gap-2 rounded-xl h-14 px-8 bg-primary text-white text-lg font-bold shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <RouterLink :to="`/watch/${activeHero.slug}`" class="flex h-14 min-w-[168px] items-center justify-center gap-2 rounded-2xl bg-primary px-8 text-lg font-bold text-white shadow-xl shadow-primary/30 transition-transform hover:scale-[1.02]">
                 <span class="material-symbols-outlined">play_arrow</span>
                 <span>Watch Now</span>
               </RouterLink>
-              <RouterLink :to="`/movies/${activeHero.slug}`" class="flex w-full sm:w-auto min-w-[140px] items-center justify-center gap-2 rounded-xl h-14 px-8 bg-white/10 backdrop-blur-md text-white text-lg font-bold hover:bg-white/20 transition-all">
+              <RouterLink :to="`/movies/${activeHero.slug}`" class="flex h-14 min-w-[168px] items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-8 text-lg font-bold text-white backdrop-blur-md transition-all hover:bg-white/16">
                 <span class="material-symbols-outlined">info</span>
                 <span>Details</span>
               </RouterLink>
+            </div>
+              </div>
+            </div>
+            <div class="hidden items-end justify-end p-8 lg:flex xl:p-10">
+              <div class="w-full max-w-[280px] rounded-[28px] border border-white/12 bg-white/10 p-3 text-white shadow-2xl backdrop-blur-xl">
+                <div class="aspect-[3/4] overflow-hidden rounded-[22px] bg-slate-900/50">
+                  <img :src="activeHero.posterUrl || activeHero.backdropUrl" :alt="activeHero.title" loading="lazy" class="h-full w-full object-cover object-top" />
+                </div>
+                <div class="px-1 pb-2 pt-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200/80">Spotlight</p>
+                  <p class="mt-2 text-2xl font-bold leading-tight">{{ activeHero.title }}</p>
+                  <p class="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-200/80">{{ activeHero.overview || 'Watch the featured title from a cleaner hero layout.' }}</p>
+                </div>
+              </div>
             </div>
           </div>
 
           <button
             v-if="heroSlides.length > 1"
             @click="prevHero"
-            class="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 size-11 rounded-full bg-black/40 backdrop-blur text-white items-center justify-center hover:bg-black/55 transition-colors z-20"
+            class="absolute left-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50 md:flex"
             aria-label="Previous hero"
           >
             <span class="material-symbols-outlined">chevron_left</span>
@@ -260,13 +308,13 @@ onBeforeUnmount(() => {
           <button
             v-if="heroSlides.length > 1"
             @click="nextHero"
-            class="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 size-11 rounded-full bg-black/40 backdrop-blur text-white items-center justify-center hover:bg-black/55 transition-colors z-20"
+            class="absolute right-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50 md:flex"
             aria-label="Next hero"
           >
             <span class="material-symbols-outlined">chevron_right</span>
           </button>
 
-          <div v-if="heroSlides.length > 1" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          <div v-if="heroSlides.length > 1" class="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
             <button
               v-for="(_, idx) in heroSlides"
               :key="idx"
@@ -277,20 +325,23 @@ onBeforeUnmount(() => {
             ></button>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Continue Watching Section -->
-      <section v-if="feed.continueWatching?.length" class="mb-12">
-        <div class="flex items-center justify-between px-2 pb-6">
-          <h2 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">Continue Watching</h2>
-          <RouterLink to="/watchlist" class="text-primary text-sm font-semibold hover:underline">My Watchlist</RouterLink>
+      <section v-if="feed.continueWatching?.length" class="space-y-5">
+        <div class="flex items-center justify-between gap-4 px-1">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Continue Watching</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Resume unfinished titles without losing your progress markers.</p>
+          </div>
+          <RouterLink to="/watchlist" class="shrink-0 text-sm font-semibold text-primary hover:underline">My Watchlist</RouterLink>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <article v-for="entry in feed.continueWatching" :key="entry.movie.id" class="flex gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <div class="w-32 shrink-0">
-               <img :src="entry.movie.backdropUrl || entry.movie.posterUrl" :alt="entry.movie.title" loading="lazy" class="w-full h-full object-cover" />
+        <div class="grid grid-cols-1 gap-5 rounded-[28px] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/55 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <article v-for="entry in feed.continueWatching" :key="entry.movie.id" class="flex gap-4 overflow-hidden rounded-2xl border border-slate-200/70 bg-white px-3 py-3 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-950/70">
+            <div class="w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-900/60">
+               <img :src="entry.movie.backdropUrl || entry.movie.posterUrl" :alt="entry.movie.title" loading="lazy" class="h-full w-full object-cover" />
             </div>
-            <div class="flex py-3 pr-3 flex-col justify-between w-full">
+            <div class="flex w-full flex-col justify-between py-1 pr-1">
                <div>
                   <h3 class="text-slate-900 dark:text-white font-bold text-sm line-clamp-1">{{ entry.movie.title }}</h3>
                   <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">{{ (entry.movie.genres || []).join(' • ') }}</p>
@@ -306,33 +357,36 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section v-for="section in sections" :key="section.key" class="mb-12 group/section relative">
-        <div class="flex items-center justify-between px-2 pb-6">
-          <h2 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">{{ section.title }}</h2>
-          <RouterLink to="/explore" class="text-primary text-sm font-semibold hover:underline">View All</RouterLink>
+      <section v-for="section in sections" :key="section.key" class="group/section space-y-5">
+        <div class="flex items-center justify-between gap-4 px-1">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{{ section.title }}</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ section.description }}</p>
+          </div>
+          <RouterLink to="/explore" class="shrink-0 text-sm font-semibold text-primary hover:underline">View All</RouterLink>
         </div>
         
         <div class="relative">
-          <!-- Left Arrow -->
           <button 
             @click="scroll(section.key, -1)"
-            class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 size-12 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 z-30 opacity-0 group-hover/section:opacity-100 transition-all hover:scale-110 hover:text-primary active:scale-95"
+            class="absolute left-4 top-1/2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 opacity-0 shadow-xl transition-all hover:scale-105 hover:text-primary group-hover/section:opacity-100 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300 md:flex"
             aria-label="Scroll left"
           >
             <span class="material-symbols-outlined font-bold">chevron_left</span>
           </button>
 
-          <div 
-            :ref="el => { if (el) sectionRefs[section.key] = el }"
-            class="flex overflow-x-auto pb-6 pt-2 gap-4 md:gap-6 scrollbar-hide snap-x px-8 md:px-24 -mx-6 md:-mx-20 relative scroll-smooth"
-          >
-            <MovieCard v-for="(movie, idx) in section.items" :key="movie.id || idx" :movie="movie" />
+          <div class="overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/55">
+            <div 
+              :ref="el => { if (el) sectionRefs[section.key] = el }"
+              class="flex snap-x gap-4 overflow-x-auto px-4 py-5 scrollbar-hide scroll-smooth sm:px-5 lg:gap-6 lg:px-6 lg:py-6"
+            >
+              <MovieCard v-for="(movie, idx) in section.items" :key="movie.id || idx" :movie="movie" />
+            </div>
           </div>
 
-          <!-- Right Arrow -->
           <button 
             @click="scroll(section.key, 1)"
-            class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 size-12 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 z-30 opacity-0 group-hover/section:opacity-100 transition-all hover:scale-110 hover:text-primary active:scale-95"
+            class="absolute right-4 top-1/2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 opacity-0 shadow-xl transition-all hover:scale-105 hover:text-primary group-hover/section:opacity-100 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300 md:flex"
             aria-label="Scroll right"
           >
             <span class="material-symbols-outlined font-bold">chevron_right</span>
@@ -341,41 +395,46 @@ onBeforeUnmount(() => {
       </section>
 
       <!-- Genre Browse Section -->
-      <section v-if="feed.genres?.length" class="mb-12">
-        <div class="flex items-center justify-between px-2 pb-6">
-          <h2 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">Browse by Genre</h2>
-          <RouterLink to="/explore" class="text-primary text-sm font-semibold hover:underline">Open Explore</RouterLink>
+      <section v-if="feed.genres?.length" class="space-y-5">
+        <div class="flex items-center justify-between gap-4 px-1">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Browse by Genre</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Jump into a mood quickly without leaving the homepage rhythm.</p>
+          </div>
+          <RouterLink to="/explore" class="shrink-0 text-sm font-semibold text-primary hover:underline">Open Explore</RouterLink>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 gap-4 rounded-[28px] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/55 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           <RouterLink
             v-for="(genre, idx) in feed.genres.slice(0, 12)"
             :key="genre.slug || genre.genre"
             :to="`/explore?genre=${encodeURIComponent(genre.genre)}`"
             :style="getHoverCardVars(idx)"
-            class="hover-tint-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors cursor-pointer min-h-[110px]"
+            class="hover-tint-card flex min-h-[118px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 text-center transition-colors dark:border-slate-800 dark:bg-slate-950/70"
           >
-            <h3 class="text-slate-900 dark:text-white font-bold text-lg leading-tight">{{ genre.genre }}</h3>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">{{ genre.titles }} titles</p>
+            <h3 class="text-lg font-bold leading-tight text-slate-900 dark:text-white">{{ genre.genre }}</h3>
+            <p class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{{ genre.titles }} titles</p>
           </RouterLink>
         </div>
       </section>
 
-      <!-- Country Browse Section -->
-      <section class="mb-12">
-        <div class="flex items-center justify-between px-2 pb-6">
-          <h2 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">Browse by Country</h2>
-          <RouterLink to="/countries" class="text-primary text-sm font-semibold hover:underline">Open Countries</RouterLink>
+      <section v-if="feed.countries?.length" class="space-y-5">
+        <div class="flex items-center justify-between gap-4 px-1">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Browse by Country</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Keep region browsing aligned with the rest of the homepage cards.</p>
+          </div>
+          <RouterLink to="/categories" class="shrink-0 text-sm font-semibold text-primary hover:underline">Open Categories</RouterLink>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 gap-4 rounded-[28px] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/55 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           <RouterLink
             v-for="(country, idx) in feed.countries.slice(0, 12)"
             :key="country.country"
             :to="`/explore?country=${encodeURIComponent(country.country)}`"
             :style="getHoverCardVars(idx)"
-            class="hover-tint-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors cursor-pointer min-h-[110px]"
+            class="hover-tint-card flex min-h-[118px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 text-center transition-colors dark:border-slate-800 dark:bg-slate-950/70"
           >
-            <h3 class="text-slate-900 dark:text-white font-bold text-lg leading-tight">{{ country.country }}</h3>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">{{ country.titles }} titles</p>
+            <h3 class="text-lg font-bold leading-tight text-slate-900 dark:text-white">{{ country.country }}</h3>
+            <p class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{{ country.titles }} titles</p>
           </RouterLink>
         </div>
       </section>
@@ -392,6 +451,10 @@ onBeforeUnmount(() => {
   background-color: var(--hover-bg);
   border-color: var(--hover-border);
   transform: translateY(-1px);
+}
+
+.hero-meta-pill > span {
+  display: none;
 }
 
 :global(.dark) .hover-tint-card:hover {

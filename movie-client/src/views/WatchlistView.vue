@@ -15,9 +15,22 @@ const items = ref([]);
 const info = ref('');
 
 const totalItems = computed(() => items.value.length);
+const completedItems = computed(() => items.value.filter((item) => item.isCompleted).length);
+const inProgressItems = computed(() => items.value.filter((item) => !item.isCompleted && progressPercent(item) > 0).length);
+
+function progressPercent(item) {
+  const durationSeconds = Math.max(1, Number(item?.movie?.durationMinutes || 0) * 60);
+  return Math.min(100, Math.max(0, Math.round((Number(item?.progressSeconds || 0) / durationSeconds) * 100)));
+}
+
+function movieLabel(item) {
+  const type = String(item?.movie?.type || '').toLowerCase() === 'series' ? 'Series' : 'Movie';
+  return [item?.movie?.releaseYear, (item?.movie?.genres || [])[0] || type, formatRuntime(item?.movie?.durationMinutes)].filter(Boolean).join(' • ');
+}
 
 async function loadWatchlist() {
   if (!authStore.isLoggedIn) {
+    items.value = [];
     return;
   }
 
@@ -26,9 +39,9 @@ async function loadWatchlist() {
 
   try {
     const result = await getWatchlist();
-    items.value = result.items;
+    items.value = Array.isArray(result.items) ? result.items : [];
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to load watchlist');
+    error.value = getApiErrorMessage(err, 'Không thể tải danh sách xem sau');
   } finally {
     loading.value = false;
   }
@@ -38,19 +51,23 @@ async function removeItem(movieId) {
   try {
     await removeWatchlist(movieId);
     items.value = items.value.filter((item) => item.movie.id !== movieId);
-    info.value = 'Removed from watchlist.';
+    info.value = 'Đã xóa phim khỏi danh sách xem sau.';
   } catch (err) {
-    info.value = getApiErrorMessage(err, 'Failed to remove item');
+    info.value = getApiErrorMessage(err, 'Không thể xóa phim khỏi danh sách');
   }
 }
 
 async function markCompleted(item) {
   try {
-    await upsertWatchlist({ movieId: item.movie.id, progressSeconds: item.progressSeconds, isCompleted: true });
+    await upsertWatchlist({
+      movieId: item.movie.id,
+      progressSeconds: item.progressSeconds,
+      isCompleted: true
+    });
     await loadWatchlist();
-    info.value = 'Marked as completed.';
+    info.value = 'Đã đánh dấu phim là đã xem xong.';
   } catch (err) {
-    info.value = getApiErrorMessage(err, 'Failed to update watchlist');
+    info.value = getApiErrorMessage(err, 'Không thể cập nhật trạng thái');
   }
 }
 
@@ -58,129 +75,181 @@ onMounted(loadWatchlist);
 </script>
 
 <template>
-  <div class="flex flex-col flex-1">
-    <!-- User Profile Header Section (mocked for visual consistency) -->
-    <div class="px-6 md:px-10 py-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 -mx-6 md:-mx-10 -mt-8 mb-8">
-      <div class="max-w-[1280px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="flex items-center gap-6">
-          <div class="size-20 md:size-24 bg-slate-200 dark:bg-slate-800 rounded-full ring-4 ring-primary/10 overflow-hidden shrink-0 flex items-center justify-center">
-             <span class="material-symbols-outlined text-4xl text-slate-400">person</span>
+  <div class="page-shell">
+    <section class="page-hero overflow-hidden">
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)] lg:items-end">
+        <div class="space-y-6">
+          <span class="page-kicker">
+            <span class="material-symbols-outlined text-base">bookmark</span>
+            My Watchlist
+          </span>
+          <div class="space-y-4">
+            <h1 class="page-title">Danh sách xem sau được cá nhân hóa cho tài khoản của bạn.</h1>
+            <p class="page-copy">
+              Lưu lại các phim muốn xem, tiếp tục những phim đang dở và quản lý tiến độ ngay trong một không gian thống nhất.
+            </p>
           </div>
-          <div class="space-y-1">
-            <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ authStore.user?.name || 'My Profile' }}</h1>
-            <div class="flex flex-wrap items-center gap-4 text-slate-500 text-sm">
-              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-lg">movie</span> {{ totalItems }} Movies in Watchlist</span>
-              <span v-if="authStore.isLoggedIn" class="bg-primary/10 text-primary px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">Member</span>
-            </div>
+          <div class="flex flex-wrap gap-3">
+            <RouterLink to="/explore" class="action-primary">
+              <span class="material-symbols-outlined text-[18px]">travel_explore</span>
+              Khám phá thêm phim
+            </RouterLink>
+            <RouterLink v-if="authStore.isLoggedIn" to="/profile" class="action-secondary">
+              <span class="material-symbols-outlined text-[18px]">account_circle</span>
+              Hồ sơ tài khoản
+            </RouterLink>
           </div>
         </div>
-      </div>
-      
-      <!-- Tabs -->
-      <div class="flex mt-8 gap-8 max-w-[1280px] mx-auto overflow-x-auto">
-        <div class="pb-4 text-sm font-bold border-b-2 border-primary text-primary flex items-center gap-2 whitespace-nowrap">
-          <span class="material-symbols-outlined text-lg">bookmark</span> Watchlist
-        </div>
-      </div>
-    </div>
 
-    <div class="max-w-[1280px] mx-auto w-full">
-      <div v-if="!authStore.isLoggedIn" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm text-center px-4">
-        <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-700 mb-4">lock</span>
-        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Authentication Required</h3>
-        <p class="text-slate-500 mb-6 max-w-md">You need to sign in to your account to view and manage your watchlist.</p>
-        <RouterLink to="/login" class="bg-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-          Sign In
+        <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          <article class="panel-muted p-5">
+            <p class="control-label">Tổng tiêu đề</p>
+            <p class="text-3xl font-black text-slate-900 dark:text-white">{{ totalItems }}</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Tất cả phim đã lưu trong watchlist.</p>
+          </article>
+          <article class="panel-muted p-5">
+            <p class="control-label">Đang xem</p>
+            <p class="text-3xl font-black text-slate-900 dark:text-white">{{ inProgressItems }}</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Các phim có tiến độ nhưng chưa hoàn tất.</p>
+          </article>
+          <article class="panel-muted p-5">
+            <p class="control-label">Đã hoàn tất</p>
+            <p class="text-3xl font-black text-slate-900 dark:text-white">{{ completedItems }}</p>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Số phim đã đánh dấu xem xong.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="!authStore.isLoggedIn" class="empty-state">
+      <div class="flex size-18 items-center justify-center rounded-full bg-primary/12 text-primary">
+        <span class="material-symbols-outlined text-4xl">lock</span>
+      </div>
+      <h2 class="section-title">Bạn cần đăng nhập để xem watchlist.</h2>
+      <p class="page-copy text-center">
+        Đăng nhập để đồng bộ tiến độ xem và quản lý danh sách phim trên mọi thiết bị.
+      </p>
+      <RouterLink to="/login" class="action-primary">
+        <span class="material-symbols-outlined text-[18px]">login</span>
+        Đăng nhập ngay
+      </RouterLink>
+    </section>
+
+    <template v-else>
+      <div v-if="info" class="status-card status-info">
+        <span class="material-symbols-outlined text-[20px]">info</span>
+        <span>{{ info }}</span>
+      </div>
+
+      <div v-if="error" class="status-card status-error">
+        <span class="material-symbols-outlined text-[20px]">error</span>
+        <span>{{ error }}</span>
+      </div>
+
+      <section v-if="loading" class="panel-surface flex min-h-[360px] flex-col items-center justify-center gap-3 p-10 text-center">
+        <span class="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+        <p class="text-base font-semibold text-slate-600 dark:text-slate-300">Đang tải watchlist của bạn...</p>
+      </section>
+
+      <section v-else-if="!items.length" class="empty-state">
+        <div class="flex size-18 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+          <span class="material-symbols-outlined text-4xl">bookmark_remove</span>
+        </div>
+        <h2 class="section-title">Watchlist hiện chưa có phim nào.</h2>
+        <p class="page-copy text-center">
+          Hãy thêm các phim bạn muốn xem sau để tạo hàng đợi cá nhân hóa và quay lại bất kỳ lúc nào.
+        </p>
+        <RouterLink to="/explore" class="action-primary">
+          <span class="material-symbols-outlined text-[18px]">theaters</span>
+          Đi tới thư viện phim
         </RouterLink>
-      </div>
+      </section>
 
-      <template v-else>
-        <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-          <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-4">progress_activity</span>
-          <p class="text-slate-500 font-medium">Loading your watchlist...</p>
-        </div>
-        
-        <div v-else-if="error" class="bg-red-50 dark:bg-red-900/20 text-red-500 p-6 rounded-2xl border border-red-100 dark:border-red-900 mb-8">
-          {{ error }}
-        </div>
-        
-        <div v-else-if="!items.length" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm text-center px-4">
-          <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-700 mb-4">bookmark_border</span>
-          <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Your watchlist is empty</h3>
-          <p class="text-slate-500 mb-6 max-w-md">Explore our catalog and add movies you want to watch later.</p>
-          <RouterLink to="/explore" class="bg-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-primary/90 transition-colors">
-            Explore Movies
+      <section v-else class="space-y-6">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Phim đã lưu</h2>
+            <p class="section-copy">Tất cả tiêu đề trong watchlist, kèm tiến độ hiện tại và thao tác nhanh để tiếp tục xem.</p>
+          </div>
+          <RouterLink to="/explore" class="action-secondary">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Thêm phim mới
           </RouterLink>
         </div>
 
-        <div v-else class="space-y-6">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">My Watchlist <span class="text-slate-400 font-normal ml-2">({{ totalItems }} titles)</span></h2>
-          </div>
-
-          <div v-if="info" class="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 p-4 rounded-xl border border-blue-100 dark:border-blue-900 text-sm font-medium flex items-center gap-2">
-            <span class="material-symbols-outlined">info</span>
-            {{ info }}
-          </div>
-
-          <!-- Movie Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              <div v-for="item in items" :key="item.id" class="group relative flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
-                <div class="relative flex-shrink-0 aspect-[2/3] overflow-hidden bg-slate-200 dark:bg-slate-800">
-                  <img :src="item.movie.posterUrl || item.movie.backdropUrl" :alt="item.movie.title" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-
-                  <div class="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                    <div class="bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-white">
-                      {{ item.movie.quality || 'HD' }}
-                    </div>
-                    <div v-if="item.movie.type" class="bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg text-[11px] font-bold text-white/95 tracking-wide uppercase">
-                      {{ String(item.movie.type).toLowerCase() === 'series' ? 'Series' : 'Movie' }}
-                    </div>
-                  </div>
-                 
-                 <!-- Overlay Actions -->
-                 <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
-                   <RouterLink :to="`/watch/${item.movie.slug}`" class="w-full bg-primary text-white py-2 rounded-xl text-sm font-bold text-center hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
-                     <span class="material-symbols-outlined text-lg">play_arrow</span> Resume
-                  </RouterLink>
-                  <RouterLink :to="`/movies/${item.movie.slug}`" class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white py-2 rounded-xl text-sm font-bold text-center transition-colors">
-                    Details
-                  </RouterLink>
-                </div>
-                
-                <div v-if="item.isCompleted" class="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-md">
-                   <span class="material-symbols-outlined text-sm">check_circle</span> Watched
-                </div>
+        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <article
+            v-for="item in items"
+            :key="item.id"
+            class="panel-surface group overflow-hidden"
+          >
+            <div class="relative aspect-[16/10] overflow-hidden bg-slate-200 dark:bg-slate-800">
+              <img
+                :src="item.movie.backdropUrl || item.movie.posterUrl"
+                :alt="item.movie.title"
+                loading="lazy"
+                class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent"></div>
+              <div class="absolute left-4 top-4 flex flex-wrap gap-2">
+                <span class="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                  {{ item.movie.quality || 'HD' }}
+                </span>
+                <span
+                  v-if="item.isCompleted"
+                  class="rounded-full bg-emerald-500/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+                >
+                  Đã xem xong
+                </span>
               </div>
-              
-              <div class="p-4 flex flex-col flex-1">
-                <h3 class="font-bold text-slate-900 dark:text-white line-clamp-1 mb-1" :title="item.movie.title">{{ item.movie.title }}</h3>
-                <p class="text-xs text-slate-500 mb-3">{{ item.movie.releaseYear }} • {{ (item.movie.genres || [])[0] || 'Movie' }} • {{ formatRuntime(item.movie.durationMinutes) }}</p>
-                
-                <!-- Progress Bar -->
-                <div class="mt-auto space-y-2">
-                   <div class="flex justify-between text-xs font-medium text-slate-500">
-                      <span>Progress</span>
-                      <span>{{ Math.round((item.progressSeconds / Math.max(1, item.movie.durationMinutes * 60)) * 100) }}%</span>
-                   </div>
-                   <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div class="h-full bg-primary rounded-full transition-all duration-500" :style="`width: ${Math.min(100, (item.progressSeconds / Math.max(1, item.movie.durationMinutes * 60)) * 100)}%`"></div>
-                   </div>
-                   
-                   <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
-                      <button @click="markCompleted(item)" class="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-green-500 dark:hover:text-green-400 flex items-center justify-center gap-1 py-1 transition-colors">
-                         <span class="material-symbols-outlined text-sm">done_all</span> Finish
-                      </button>
-                      <button @click="removeItem(item.movie.id)" class="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 flex items-center justify-center gap-1 py-1 transition-colors">
-                         <span class="material-symbols-outlined text-sm">delete</span> Remove
-                      </button>
-                   </div>
+              <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="truncate text-lg font-black text-white">{{ item.movie.title }}</h3>
+                  <p class="mt-1 truncate text-sm text-white/72">{{ movieLabel(item) }}</p>
                 </div>
+                <RouterLink
+                  :to="`/watch/${item.movie.slug}`"
+                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/14 text-white backdrop-blur hover:bg-primary"
+                  :title="`Xem ${item.movie.title}`"
+                >
+                  <span class="material-symbols-outlined">play_arrow</span>
+                </RouterLink>
               </div>
             </div>
-          </div>
+
+            <div class="space-y-5 p-5">
+              <div class="rounded-2xl border border-slate-200/90 bg-slate-50/85 p-4 dark:border-slate-800 dark:bg-slate-900/75">
+                <div class="flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  <span>Tiến độ</span>
+                  <span>{{ progressPercent(item) }}%</span>
+                </div>
+                <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all duration-500"
+                    :style="{ width: `${progressPercent(item)}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <RouterLink :to="`/movies/${item.movie.slug}`" class="action-secondary">
+                  <span class="material-symbols-outlined text-[18px]">info</span>
+                  Chi tiết
+                </RouterLink>
+                <button type="button" class="action-secondary" @click="markCompleted(item)">
+                  <span class="material-symbols-outlined text-[18px]">done_all</span>
+                  Hoàn tất
+                </button>
+              </div>
+
+              <button type="button" class="action-danger w-full" @click="removeItem(item.movie.id)">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+                Xóa khỏi watchlist
+              </button>
+            </div>
+          </article>
         </div>
-      </template>
-    </div>
+      </section>
+    </template>
   </div>
 </template>

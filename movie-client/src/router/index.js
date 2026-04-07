@@ -9,6 +9,8 @@ const WatchlistView = () => import('../views/WatchlistView.vue');
 const LoginView = () => import('../views/LoginView.vue');
 const ProfileView = () => import('../views/ProfileView.vue');
 const PricingView = () => import('../views/PricingView.vue');
+const PaymentSuccessView = () => import('../views/PaymentSuccessView.vue');
+const PaymentErrorView = () => import('../views/PaymentErrorView.vue');
 const NotFoundView = () => import('../views/NotFoundView.vue');
 const PersonDetailView = () => import('../views/PersonDetailView.vue'); // New import
 
@@ -35,6 +37,8 @@ const router = createRouter({
     { path: '/login', name: 'login', component: LoginView },
     { path: '/profile', name: 'profile', component: ProfileView },
     { path: '/pricing', name: 'pricing', component: PricingView },
+    { path: '/payment/success', name: 'payment-success', component: PaymentSuccessView },
+    { path: '/payment/error', name: 'payment-error', component: PaymentErrorView },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView }
   ],
   scrollBehavior() {

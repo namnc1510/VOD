@@ -18,6 +18,10 @@ function parseOrigins(value, fallback) {
     .filter(Boolean);
 }
 
+function isLocalUrl(value) {
+  return /:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(String(value || ''));
+}
+
 const defaultOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -82,6 +86,29 @@ if (config.env === 'production') {
     console.error('\x1b[33m[TIP] Please set MONGO_URI, JWT_SECRET and JWT_REFRESH_SECRET in your dashboard (Render/Vercel/etc.)\x1b[0m');
     // In production, we should ideally exit if critical secrets are missing
     // process.exit(1); 
+  }
+
+  const paymentEnvIssues = [];
+
+  if (!config.vnpTmnCode || config.vnpTmnCode === 'VNBTS001') {
+    paymentEnvIssues.push('VNP_TMNCODE');
+  }
+  if (!config.vnpHashSecret || config.vnpHashSecret === 'SECRET_GOES_HERE') {
+    paymentEnvIssues.push('VNP_HASHSECRET');
+  }
+  if (!config.vnpReturnUrl || isLocalUrl(config.vnpReturnUrl)) {
+    paymentEnvIssues.push('VNP_RETURNURL');
+  }
+  if (!config.frontendPaymentSuccessUrl || isLocalUrl(config.frontendPaymentSuccessUrl)) {
+    paymentEnvIssues.push('FRONTEND_PAYMENT_SUCCESS_URL');
+  }
+  if (!config.frontendPaymentErrorUrl || isLocalUrl(config.frontendPaymentErrorUrl)) {
+    paymentEnvIssues.push('FRONTEND_PAYMENT_ERROR_URL');
+  }
+
+  if (paymentEnvIssues.length > 0) {
+    console.error(`\x1b[31m[ERROR] Missing or invalid VNPAY env vars in production: ${paymentEnvIssues.join(', ')}\x1b[0m`);
+    console.error('\x1b[33m[TIP] Set the VNPAY callback URLs to your deployed backend/frontend domains instead of localhost.\x1b[0m');
   }
 }
 

@@ -24,15 +24,19 @@ const actionMessage = ref('');
 const activeTab = ref('info');
 
 const slug = computed(() => route.params.slug);
+const movie = computed(() => landing.value?.movie || null);
+const commentsState = computed(() => landing.value?.comments || { items: [], total: 0 });
+const relatedMovies = computed(() => (Array.isArray(landing.value?.related) ? landing.value.related : []));
 
 const headData = computed(() => {
-  if (!landing.value?.movie) return { title: 'Loading...', meta: [] };
+  if (!movie.value) return { title: 'Loading...', meta: [] };
+
   return {
-    title: `${landing.value.movie.title} - StreamVue`,
+    title: `${movie.value.title} - StreamVue`,
     meta: [
-      { property: 'og:title', content: landing.value.movie.title },
-      { property: 'og:image', content: landing.value.movie.posterUrl || landing.value.movie.backdropUrl },
-      { property: 'og:description', content: landing.value.movie.overview || '' }
+      { property: 'og:title', content: movie.value.title },
+      { property: 'og:image', content: movie.value.posterUrl || movie.value.backdropUrl },
+      { property: 'og:description', content: movie.value.overview || '' }
     ]
   };
 });
@@ -41,49 +45,72 @@ useHead(headData);
 const canComment = computed(() => authStore.isLoggedIn);
 
 const trailerLink = computed(() => {
-  const movie = landing.value?.movie;
-  if (!movie) return '';
+  if (!movie.value) return '';
 
-  const raw = String(movie.trailerUrl || '').trim();
+  const raw = String(movie.value.trailerUrl || '').trim();
   if (!raw) return '';
 
   if (raw.includes('example.com/trailers/')) {
-    const title = String(movie.title || '').trim();
-    if (!title) return '';
-    return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} trailer`)}`;
+    const title = String(movie.value.title || '').trim();
+    return title ? `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} trailer`)}` : '';
   }
 
   return raw;
 });
 
 const metaBadges = computed(() => {
-  const movie = landing.value?.movie;
-  if (!movie) return [];
+  if (!movie.value) return [];
 
   const badges = [];
-  if (movie.quality) badges.push({ key: 'quality', label: String(movie.quality).toUpperCase(), tone: 'primary' });
-  if (movie.type) {
-    const label = String(movie.type).toLowerCase() === 'series' ? 'Series' : 'Movie';
-    badges.push({ key: 'type', label, tone: 'slate' });
+  if (movie.value.quality) badges.push({ key: 'quality', label: String(movie.value.quality).toUpperCase(), tone: 'primary' });
+  if (movie.value.type) {
+    badges.push({
+      key: 'type',
+      label: String(movie.value.type).toLowerCase() === 'series' ? 'Series' : 'Movie',
+      tone: 'slate'
+    });
   }
-  if (movie.status && movie.status !== 'released') {
-    const label = movie.status === 'coming_soon' ? 'Coming Soon' : String(movie.status);
-    badges.push({ key: 'status', label, tone: 'amber' });
+  if (movie.value.status && movie.value.status !== 'released') {
+    badges.push({
+      key: 'status',
+      label: movie.value.status === 'coming_soon' ? 'Coming Soon' : String(movie.value.status),
+      tone: 'amber'
+    });
   }
-  if (typeof movie.views === 'number') badges.push({ key: 'views', label: `${formatNumber(movie.views)} views`, tone: 'slate' });
+  if (typeof movie.value.views === 'number') {
+    badges.push({ key: 'views', label: `${formatNumber(movie.value.views)} views`, tone: 'slate' });
+  }
   return badges;
 });
 
 const watchNowTo = computed(() => {
-  const slugValue = landing.value?.movie?.slug;
-  if (!slugValue) return '';
-
+  const movieSlug = movie.value?.slug;
+  if (!movieSlug) return '';
   if (Array.isArray(episodes.value) && episodes.value.length > 0) {
-    return { path: `/watch/${slugValue}`, query: { episodeId: episodes.value[0].id } };
+    return { path: `/watch/${movieSlug}`, query: { episodeId: episodes.value[0].id } };
   }
-
-  return `/watch/${slugValue}`;
+  return `/watch/${movieSlug}`;
 });
+
+const movieFacts = computed(() => {
+  if (!movie.value) return [];
+
+  return [
+    { label: 'Năm phát hành', value: movie.value.releaseYear || 'N/A' },
+    { label: 'Thời lượng', value: formatRuntime(movie.value.durationMinutes) },
+    { label: 'Ngôn ngữ', value: movie.value.audioLanguage || '-' },
+    { label: 'Độ tuổi', value: movie.value.ageRating || '-' },
+    {
+      label: 'Quốc gia',
+      value: (movie.value.countries || []).map((country) => country.name || country).join(', ') || '-'
+    }
+  ];
+});
+
+function resolvePersonLink(person) {
+  const value = typeof person === 'object' ? person : { name: String(person || '') };
+  return `/person/${value.slug || toSlug(value.name)}`;
+}
 
 async function loadMovie() {
   loading.value = true;
@@ -93,439 +120,513 @@ async function loadMovie() {
 
   try {
     landing.value = await getMovieLanding(slug.value);
+    if (!landing.value.comments) {
+      landing.value.comments = { items: [], total: 0 };
+    }
 
-    // Load episodes if this title is a series (or if backend already has episodes).
     episodesLoading.value = true;
     try {
-      const res = await getMovieEpisodes(slug.value, { limit: 500 });
-      episodes.value = Array.isArray(res.items) ? res.items : [];
+      const response = await getMovieEpisodes(slug.value, { limit: 500 });
+      episodes.value = Array.isArray(response.items) ? response.items : [];
     } finally {
       episodesLoading.value = false;
     }
   } catch (err) {
-    error.value = getApiErrorMessage(err, 'Failed to load movie details');
+    error.value = getApiErrorMessage(err, 'Không thể tải chi tiết phim');
   } finally {
     loading.value = false;
   }
 }
 
 async function addToWatchlist() {
-  if (!landing.value?.movie) {
-    return;
-  }
+  if (!movie.value) return;
 
   if (!authStore.isLoggedIn) {
-    actionMessage.value = 'Sign in first to save watchlist.';
+    actionMessage.value = 'Đăng nhập để lưu phim vào watchlist.';
     return;
   }
 
   try {
     await upsertWatchlist({
-      movieSlug: landing.value.movie.slug,
+      movieSlug: movie.value.slug,
       progressSeconds: 0,
       isCompleted: false
     });
-    actionMessage.value = 'Added to watchlist.';
+    actionMessage.value = 'Đã thêm phim vào watchlist.';
   } catch (err) {
-    actionMessage.value = getApiErrorMessage(err, 'Failed to add watchlist');
+    actionMessage.value = getApiErrorMessage(err, 'Không thể thêm vào watchlist');
   }
 }
 
 async function submitComment() {
   const content = commentText.value.trim();
-  if (!content) {
-    return;
-  }
+  if (!content) return;
 
   if (!authStore.isLoggedIn) {
-    actionMessage.value = 'Sign in first to post comments.';
+    actionMessage.value = 'Đăng nhập để gửi bình luận.';
     return;
   }
 
   submittingComment.value = true;
+
   try {
     const comment = await postMovieComment(slug.value, { content });
+    if (!landing.value.comments) {
+      landing.value.comments = { items: [], total: 0 };
+    }
     landing.value.comments.items.unshift(comment);
     landing.value.comments.total += 1;
     commentText.value = '';
-    actionMessage.value = 'Comment posted.';
+    actionMessage.value = 'Đã gửi bình luận.';
   } catch (err) {
-    actionMessage.value = getApiErrorMessage(err, 'Failed to post comment');
+    actionMessage.value = getApiErrorMessage(err, 'Không thể gửi bình luận');
   } finally {
     submittingComment.value = false;
   }
 }
 
-const toSlug = (text) => {
+function toSlug(text) {
   return String(text || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
-};
+}
 
 watch(slug, loadMovie, { immediate: true });
 </script>
 
 <template>
-  <div class="flex flex-col flex-1">
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 mx-6 lg:mx-20 mt-10 rounded-2xl border border-slate-100 dark:border-slate-800">
-        <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-4">progress_activity</span>
-        <p class="text-slate-500 dark:text-slate-400 font-medium">Loading movie details...</p>
-    </div>
-    
-    <div v-else-if="error" class="bg-red-50 dark:bg-red-900/20 text-red-500 p-6 mx-6 lg:mx-20 mt-10 rounded-2xl border border-red-100 dark:border-red-900">
-        {{ error }}
+  <div class="page-shell">
+    <section v-if="loading" class="panel-surface flex min-h-[460px] flex-col items-center justify-center gap-3 p-10 text-center">
+      <span class="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+      <p class="text-base font-semibold text-slate-600 dark:text-slate-300">Đang tải trang chi tiết phim...</p>
+    </section>
+
+    <div v-else-if="error" class="status-card status-error">
+      <span class="material-symbols-outlined text-[18px]">error</span>
+      <span>{{ error }}</span>
     </div>
 
-    <template v-else-if="landing">
-      <!-- Hero Section -->
-      <div class="relative w-full overflow-hidden -mt-8 -mx-6 md:-mx-20">
-        <!-- Blurred Background Backdrop -->
-        <div class="absolute inset-0 z-0">
-          <div class="absolute inset-0 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/60 dark:via-background-dark/60 to-transparent z-10"></div>
-          <div class="w-full h-full bg-cover bg-center scale-110 blur-3xl opacity-40 dark:opacity-20" :style="`background-image: url('${landing.movie.backdropUrl || landing.movie.posterUrl}')`"></div>
+    <template v-else-if="movie">
+      <section class="relative overflow-hidden rounded-[32px] border border-slate-200/70 bg-slate-950 shadow-[0_28px_90px_-44px_rgba(15,23,42,0.8)] dark:border-white/10">
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 bg-cover bg-center blur-sm opacity-55" :style="{ backgroundImage: `url(${movie.backdropUrl || movie.posterUrl})` }"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/82 to-slate-950/24"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent"></div>
         </div>
-        
-        <!-- Hero Content -->
-        <div class="relative z-20 px-6 md:px-20 pt-10 pb-12">
-          <div class="flex flex-col md:flex-row gap-10 max-w-[1280px] mx-auto">
-            <!-- Poster -->
-            <div class="w-full max-w-[240px] md:max-w-none md:w-[320px] mx-auto md:mx-0 flex-shrink-0 shadow-2xl rounded-xl overflow-hidden aspect-[2/3] bg-slate-200 dark:bg-slate-800">
-              <img :alt="landing.movie.title" loading="lazy" class="w-full h-full object-cover" :src="landing.movie.posterUrl || landing.movie.backdropUrl" />
-            </div>
-            
-            <!-- Metadata -->
-            <div class="flex flex-col justify-end gap-6 flex-1">
-              <nav class="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-                <RouterLink to="/" class="hover:text-primary">Home</RouterLink>
-                <span class="material-symbols-outlined text-xs">chevron_right</span>
-                <RouterLink to="/explore" class="hover:text-primary">Movies</RouterLink>
-                <span class="material-symbols-outlined text-xs">chevron_right</span>
-                <span class="text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-none">{{ landing.movie.title }}</span>
-              </nav>
-              
-              <div class="space-y-4">
-                <h1 class="text-slate-900 dark:text-white text-4xl md:text-6xl font-black tracking-tight leading-tight">{{ landing.movie.title }}</h1>
-                <div v-if="metaBadges.length" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="badge in metaBadges"
-                    :key="badge.key"
-                    class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border"
-                    :class="badge.tone === 'primary'
-                      ? 'bg-primary/15 text-primary border-primary/25'
-                      : badge.tone === 'amber'
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25'
-                        : 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20'"
-                  >
-                    {{ badge.label }}
-                  </span>
-                </div>
-                <div class="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400 font-medium text-sm sm:text-base">
-                  <span class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-yellow-500 fill-1">star</span>
-                    <span class="text-slate-900 dark:text-white">{{ landing.movie.imdbRating?.toFixed(1) || 'N/A' }}</span> IMDB
-                  </span>
-                  <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-                  <span>{{ landing.movie.releaseYear || 'Unknown' }}</span>
-                  <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-                  <span>{{ formatRuntime(landing.movie.durationMinutes) }}</span>
-                  <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-                  <span>{{ (landing.movie.genres || []).map(g => g.name || g).join(', ') || 'Various' }}</span>
-                </div>
-              </div>
-              
-              <div class="flex flex-col sm:flex-row flex-wrap gap-4 pt-4 w-full">
-                 <RouterLink v-if="!landing.movie.isPremiumLocked" :to="watchNowTo" class="flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-xl font-bold hover:scale-105 transition-transform w-full sm:w-auto flex-1 sm:flex-none">
-                   <span class="material-symbols-outlined">play_arrow</span>
-                   Watch Now
-                 </RouterLink>
-                 <RouterLink v-else to="/pricing" class="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 rounded-xl font-black hover:scale-105 transition-transform w-full sm:w-auto flex-1 sm:flex-none shadow-lg shadow-amber-500/30 uppercase tracking-widest text-sm text-center">
-                   <span class="material-symbols-outlined">workspace_premium</span>
-                   Upgrade to {{ landing.movie.accessMode?.toUpperCase() || 'PREMIUM' }}
-                 </RouterLink>
-                <a
-                  v-if="trailerLink"
-                  :href="trailerLink"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="flex items-center justify-center gap-2 px-8 py-4 bg-white/10 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-700 w-full sm:w-auto transition-colors flex-1 sm:flex-none"
-                >
-                  <span class="material-symbols-outlined">smart_display</span>
-                  Trailer
-                </a>
-                <button @click="addToWatchlist" class="flex items-center justify-center gap-2 px-8 py-4 bg-white/10 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-700 w-full sm:w-auto transition-colors flex-1 sm:flex-none">
-                  <span class="material-symbols-outlined">add</span>
-                  Add to Watchlist
-                </button>
-              </div>
 
-               <div v-if="actionMessage" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm font-medium mt-2">
-                  <span class="material-symbols-outlined text-lg">info</span>
-                  {{ actionMessage }}
-               </div>
+        <div class="relative z-10 grid gap-8 p-6 sm:p-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:p-10 xl:p-12">
+          <div class="overflow-hidden rounded-[28px] bg-slate-900/60 shadow-2xl">
+            <img :src="movie.posterUrl || movie.backdropUrl" :alt="movie.title" class="h-full w-full object-cover" loading="lazy" />
+          </div>
+
+          <div class="flex flex-col justify-end gap-6 text-white">
+            <nav class="flex flex-wrap items-center gap-2 text-sm font-medium text-white/70">
+              <RouterLink to="/" class="hover:text-white">Home</RouterLink>
+              <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+              <RouterLink to="/explore" class="hover:text-white">Explore</RouterLink>
+              <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+              <span class="text-white">{{ movie.title }}</span>
+            </nav>
+
+            <div>
+              <h1 class="text-4xl font-black leading-[0.94] tracking-tight sm:text-5xl xl:text-6xl">{{ movie.title }}</h1>
+              <div class="mt-5 flex flex-wrap gap-2.5">
+                <span
+                  v-for="badge in metaBadges"
+                  :key="badge.key"
+                  class="rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.18em]"
+                  :class="
+                    badge.tone === 'primary'
+                      ? 'border-primary/35 bg-primary/16 text-primary'
+                      : badge.tone === 'amber'
+                        ? 'border-amber-400/30 bg-amber-400/15 text-amber-300'
+                        : 'border-white/12 bg-white/8 text-white/85'
+                  "
+                >
+                  {{ badge.label }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 text-sm font-semibold text-white/72 sm:text-base">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-3 py-1">
+                <span class="material-symbols-outlined text-[18px] text-amber-300">star</span>
+                {{ movie.imdbRating?.toFixed(1) || 'N/A' }} IMDb
+              </span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-3 py-1">{{ movie.releaseYear || 'N/A' }}</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-3 py-1">{{ formatRuntime(movie.durationMinutes) }}</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-3 py-1">
+                {{ (movie.genres || []).map((genre) => genre.name || genre).join(' / ') || 'Various' }}
+              </span>
+            </div>
+
+            <p class="max-w-3xl text-base leading-8 text-white/78 sm:text-lg">
+              {{ movie.overview || 'Chưa có mô tả cho phim này.' }}
+            </p>
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <RouterLink
+                v-if="!movie.isPremiumLocked"
+                :to="watchNowTo"
+                class="action-primary min-w-[180px]"
+              >
+                <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                Xem ngay
+              </RouterLink>
+              <RouterLink
+                v-else
+                to="/pricing"
+                class="action-primary min-w-[220px] bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400"
+              >
+                <span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+                Nâng cấp để xem
+              </RouterLink>
+
+              <a
+                v-if="trailerLink"
+                :href="trailerLink"
+                target="_blank"
+                rel="noreferrer"
+                class="action-secondary min-w-[160px] border-white/16 bg-white/8 text-white hover:bg-white/12 dark:border-white/16 dark:bg-white/8 dark:text-white"
+              >
+                <span class="material-symbols-outlined text-[18px]">smart_display</span>
+                Trailer
+              </a>
+
+              <button type="button" class="action-secondary min-w-[180px] border-white/16 bg-white/8 text-white hover:bg-white/12 dark:border-white/16 dark:bg-white/8 dark:text-white" @click="addToWatchlist">
+                <span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+                Thêm vào watchlist
+              </button>
+            </div>
+
+            <div v-if="actionMessage" class="status-card status-info max-w-2xl border-white/10 bg-white/10 text-white">
+              <span class="material-symbols-outlined text-[18px]">info</span>
+              <span>{{ actionMessage }}</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Content Section -->
-      <div class="py-12 max-w-[1280px] mx-auto w-full">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          
-          <!-- Left Column: Tabs and Info -->
-          <div class="lg:col-span-8 space-y-8">
-            <!-- Custom Tab Interface -->
-            <div class="border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-              <div class="flex gap-10 min-w-max">
-                <button @click="activeTab = 'info'" :class="['pb-4 font-bold text-sm tracking-wide transition-colors', activeTab === 'info' ? 'text-primary border-b-2 border-primary' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700']">DESCRIPTION & INFO</button>
-                <button @click="activeTab = 'episodes'" :class="['pb-4 font-bold text-sm tracking-wide transition-colors', activeTab === 'episodes' ? 'text-primary border-b-2 border-primary' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700']">EPISODES / SERVERS</button>
-                <button @click="activeTab = 'comments'" :class="['pb-4 font-bold text-sm tracking-wide transition-colors', activeTab === 'comments' ? 'text-primary border-b-2 border-primary' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700']">COMMENTS ({{ landing.comments.total }})</button>
-              </div>
+      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_380px]">
+        <div class="space-y-6">
+          <div class="panel-surface overflow-hidden">
+            <div class="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-4 py-4 dark:border-slate-800">
+              <button
+                type="button"
+                class="rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.16em] transition-colors"
+                :class="activeTab === 'info' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
+                @click="activeTab = 'info'"
+              >
+                Tổng quan
+              </button>
+              <button
+                type="button"
+                class="rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.16em] transition-colors"
+                :class="activeTab === 'episodes' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
+                @click="activeTab = 'episodes'"
+              >
+                Tập phim
+              </button>
+              <button
+                type="button"
+                class="rounded-full px-4 py-2 text-sm font-black uppercase tracking-[0.16em] transition-colors"
+                :class="activeTab === 'comments' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
+                @click="activeTab = 'comments'"
+              >
+                Bình luận ({{ commentsState.total }})
+              </button>
             </div>
-            
-            <!-- Description Content -->
-            <div v-show="activeTab === 'info'" class="space-y-6">
-              <p class="text-lg leading-relaxed text-slate-700 dark:text-slate-300 pt-4">
-                {{ landing.movie.overview || 'No description available for this movie.' }}
-              </p>
-              
-              <!-- Cast & Crew Gallery Row -->
-              <div v-if="(landing.movie.actors && landing.movie.actors.length) || (landing.movie.directors && landing.movie.directors.length)" class="py-8 border-y border-slate-200 dark:border-slate-800 space-y-8 overflow-hidden">
-                
-                <div v-if="landing.movie.directors && landing.movie.directors.length">
-                  <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-amber-500">movie_creation</span> Directors</h4>
-                  <div class="flex gap-4 overflow-x-auto pb-4 snap-x hide-scroll">
-                    <RouterLink v-for="director in landing.movie.directors" :key="director._id" :to="`/person/${director.slug}`" class="snap-start shrink-0 w-[140px] group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                       <div class="w-full aspect-square bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden relative">
-                         <img v-if="director.avatarUrl" :src="director.avatarUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                         <span v-else class="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600">person</span>
-                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                       </div>
-                       <div class="p-3 text-center">
-                         <span class="block text-slate-900 dark:text-white font-bold group-hover:text-primary transition-colors text-sm line-clamp-1">{{ director.name }}</span>
-                         <span class="block text-[11px] text-slate-500 font-semibold uppercase tracking-widest mt-0.5">Director</span>
-                       </div>
+
+            <div v-show="activeTab === 'info'" class="p-6 sm:p-7">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">Thông tin phim</h2>
+                  <p class="section-copy">Tổng hợp nội dung, credit và metadata theo cùng hệ panel với các trang khác.</p>
+                </div>
+              </div>
+
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <article v-for="fact in movieFacts" :key="fact.label" class="panel-muted p-5">
+                  <p class="control-label">{{ fact.label }}</p>
+                  <p class="text-base font-bold text-slate-900 dark:text-white">{{ fact.value }}</p>
+                </article>
+              </div>
+
+              <div
+                v-if="(movie.directors && movie.directors.length) || (movie.actors && movie.actors.length)"
+                class="mt-8 grid gap-6 xl:grid-cols-2"
+              >
+                <div v-if="movie.directors && movie.directors.length" class="space-y-4">
+                  <h3 class="text-xl font-black text-slate-900 dark:text-white">Đạo diễn</h3>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <RouterLink
+                      v-for="director in movie.directors"
+                      :key="director._id || director.slug || director.name"
+                      :to="resolvePersonLink(director)"
+                      class="panel-muted flex items-center gap-3 p-4 transition-colors hover:border-primary/25 hover:bg-white dark:hover:bg-slate-900"
+                    >
+                      <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800">
+                        <img v-if="director.avatarUrl" :src="director.avatarUrl" :alt="director.name" class="h-full w-full object-cover" loading="lazy" />
+                        <span v-else class="material-symbols-outlined text-slate-400">person</span>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-black text-slate-900 dark:text-white">{{ director.name }}</p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Director</p>
+                      </div>
                     </RouterLink>
                   </div>
                 </div>
 
-                <div v-if="landing.movie.actors && landing.movie.actors.length">
-                  <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-amber-500">recent_actors</span> Top Cast</h4>
-                  <div class="flex gap-4 overflow-x-auto pb-4 snap-x hide-scroll">
-                    <RouterLink v-for="actor in landing.movie.actors" :key="actor._id" :to="`/person/${actor.slug}`" class="snap-start shrink-0 w-[140px] group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                       <div class="w-full aspect-[2/2.5] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden relative">
-                         <img v-if="actor.avatarUrl" :src="actor.avatarUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                         <span v-else class="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600">person</span>
-                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                       </div>
-                       <div class="p-3">
-                         <span class="block text-slate-900 dark:text-white font-bold group-hover:text-primary transition-colors text-sm line-clamp-1 truncate" :title="actor.name">{{ actor.name }}</span>
-                         <span class="block text-[11px] text-slate-500 font-semibold uppercase tracking-widest mt-0.5">Actor</span>
-                       </div>
+                <div v-if="movie.actors && movie.actors.length" class="space-y-4">
+                  <h3 class="text-xl font-black text-slate-900 dark:text-white">Diễn viên</h3>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <RouterLink
+                      v-for="actor in movie.actors"
+                      :key="actor._id || actor.slug || actor.name"
+                      :to="resolvePersonLink(actor)"
+                      class="panel-muted flex items-center gap-3 p-4 transition-colors hover:border-primary/25 hover:bg-white dark:hover:bg-slate-900"
+                    >
+                      <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800">
+                        <img v-if="actor.avatarUrl" :src="actor.avatarUrl" :alt="actor.name" class="h-full w-full object-cover" loading="lazy" />
+                        <span v-else class="material-symbols-outlined text-slate-400">person</span>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-black text-slate-900 dark:text-white">{{ actor.name }}</p>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Actor</p>
+                      </div>
                     </RouterLink>
                   </div>
                 </div>
               </div>
-              
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 py-6">
-                <div>
-                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Countries</h4>
-                  <p class="text-slate-900 dark:text-white font-medium">{{ (landing.movie.countries || []).map(c => c.name || c).join(', ') || '-' }}</p>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Audio</h4>
-                  <p class="text-slate-900 dark:text-white font-medium">{{ landing.movie.audioLanguage || '-' }}</p>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Age Rating</h4>
-                  <p class="text-slate-900 dark:text-white font-medium">{{ landing.movie.ageRating || '-' }}</p>
-                </div>
-                <div v-if="landing.movie.director && (!landing.movie.directors || !landing.movie.directors.length)">
-                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Director</h4>
-                  <p class="text-slate-900 dark:text-white font-medium flex flex-wrap gap-1">
-                    <RouterLink :to="`/person/${toSlug(landing.movie.director)}`" class="hover:text-primary transition-colors">{{ landing.movie.director }}</RouterLink>
-                  </p>
-                </div>
-                <div class="sm:col-span-2" v-if="landing.movie.cast && landing.movie.cast.length && (!landing.movie.actors || !landing.movie.actors.length)">
-                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Cast</h4>
-                  <p class="text-slate-900 dark:text-white font-medium flex flex-wrap gap-1">
-                    <span v-for="(actorName, index) in landing.movie.cast" :key="actorName">
-                      <RouterLink :to="`/person/${toSlug(actorName)}`" class="hover:text-primary transition-colors">{{ actorName }}</RouterLink><span v-if="index < landing.movie.cast.length - 1" class="text-slate-400">, </span>
-                    </span>
-                  </p>
-                </div>
-              </div>
 
-              <div v-if="landing.movie.tags && landing.movie.tags.length" class="space-y-3">
-                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Tags</h3>
+              <div v-if="movie.tags && movie.tags.length" class="mt-8 space-y-4">
+                <h3 class="text-xl font-black text-slate-900 dark:text-white">Tags</h3>
                 <div class="flex flex-wrap gap-2">
                   <span
-                    v-for="tag in landing.movie.tags"
+                    v-for="tag in movie.tags"
                     :key="tag"
-                    class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                    class="rounded-full bg-slate-100 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                   >
                     {{ tag }}
                   </span>
                 </div>
               </div>
 
-              <div v-if="landing.movie.gallery && landing.movie.gallery.length" class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <h3 class="text-xl font-bold text-slate-900 dark:text-white">Gallery</h3>
-                  <span class="text-xs font-bold text-slate-500">{{ landing.movie.gallery.length }} photos</span>
+              <div v-if="movie.gallery && movie.gallery.length" class="mt-8 space-y-4">
+                <div class="section-head">
+                  <div>
+                    <h3 class="text-xl font-black text-slate-900 dark:text-white">Gallery</h3>
+                    <p class="section-copy mt-1 text-sm">Ảnh hậu trường và ảnh quảng bá đã được gom vào cùng một grid.</p>
+                  </div>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
                   <a
-                    v-for="(img, idx) in landing.movie.gallery.slice(0, 12)"
-                    :key="`${img}-${idx}`"
-                    :href="img"
+                    v-for="(image, index) in movie.gallery.slice(0, 12)"
+                    :key="`${image}-${index}`"
+                    :href="image"
                     target="_blank"
                     rel="noreferrer"
-                    class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 aspect-video"
-                    :title="`Open image ${idx + 1}`"
+                    class="group overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
                   >
-                    <img :src="img" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="" />
-                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                    <div class="aspect-video">
+                      <img :src="image" alt="" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                    </div>
                   </a>
                 </div>
               </div>
             </div>
 
-            <div v-show="activeTab === 'episodes'" class="pt-4 space-y-4">
-                <div class="flex items-center justify-between">
-                  <h3 class="text-xl font-bold text-slate-900 dark:text-white">Episodes</h3>
-                  <span v-if="episodes && episodes.length" class="text-xs font-bold text-slate-500">{{ episodes.length }} eps</span>
-                </div>
-
-                <div
-                  v-if="episodesLoading"
-                  class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4"
-                >
-                  <span class="material-symbols-outlined animate-spin text-primary text-base">progress_activity</span>
-                  Loading episodes...
-                </div>
-
-                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <template v-if="!landing.movie.isPremiumLocked">
-                    <RouterLink
-                      v-for="ep in episodes"
-                      :key="ep.id"
-                      :to="{ path: `/watch/${landing.movie.slug}`, query: { episodeId: ep.id } }"
-                      class="group flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 hover:border-primary/60 hover:shadow-sm transition-all"
-                    >
-                      <div class="min-w-0">
-                        <p class="text-sm font-black text-slate-900 dark:text-white truncate">
-                          EP {{ String(ep.epNo).padStart(2, '0') }}: {{ ep.title }}
-                        </p>
-                        <p class="text-xs text-slate-500 mt-1">
-                          {{ ep.durationSeconds ? `${Math.round(ep.durationSeconds / 60)} min` : 'Video' }}
-                        </p>
-                      </div>
-                      <span class="material-symbols-outlined text-primary group-hover:translate-x-0.5 transition-transform">play_circle</span>
-                    </RouterLink>
-                  </template>
-                  <template v-else>
-                    <RouterLink
-                      v-for="ep in episodes"
-                      :key="`locked-${ep.id}`"
-                      to="/pricing"
-                      class="group flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 p-4 hover:border-amber-500/60 hover:shadow-sm transition-all grayscale-[50%]"
-                    >
-                      <div class="min-w-0">
-                        <p class="text-sm font-black text-slate-500 dark:text-slate-400 truncate flex items-center gap-2">
-                          <span class="material-symbols-outlined text-sm text-amber-500">lock</span>
-                          EP {{ String(ep.epNo).padStart(2, '0') }}: {{ ep.title }}
-                        </p>
-                        <p class="text-xs text-slate-400 mt-1 font-bold tracking-widest uppercase">Premium Only</p>
-                      </div>
-                    </RouterLink>
-                  </template>
+            <div v-show="activeTab === 'episodes'" class="p-6 sm:p-7">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">Danh sách tập / server</h2>
+                  <p class="section-copy">Đi thẳng tới tập đầu tiên hoặc chuyển sang màn player với episode được chọn.</p>
                 </div>
               </div>
 
-            <!-- Comments Section -->
-            <div v-show="activeTab === 'comments'" class="pt-4 space-y-8">
-               <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Comments ({{ landing.comments.total }})</h3>
-               
-               <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-800/50">
-                  <div class="flex gap-4">
-                     <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 overflow-hidden">
-                        <span class="material-symbols-outlined w-full h-full flex items-center justify-center text-slate-400">person</span>
-                     </div>
-                     <div class="flex-1 space-y-3">
-                        <textarea v-model="commentText" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white resize-none" rows="3" placeholder="Share your thoughts about this movie..."></textarea>
-                        <div class="flex justify-end">
-                           <button class="px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2" :disabled="submittingComment || !canComment" @click="submitComment">
-                              <span v-if="submittingComment" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                              {{ submittingComment ? 'Posting...' : canComment ? 'Post Comment' : 'Sign In To Comment' }}
-                           </button>
-                        </div>
-                     </div>
-                  </div>
-               </div>
+              <div v-if="episodesLoading" class="status-card status-info mt-6">
+                <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                <span>Đang tải danh sách tập...</span>
+              </div>
 
-               <div class="space-y-6">
-                  <div v-for="comment in landing.comments.items" :key="comment.id" class="flex gap-4 pb-6 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
-                     <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 overflow-hidden">
-                        <img v-if="comment.user && comment.user.avatarUrl" :src="comment.user.avatarUrl" :alt="comment.user.name || 'User'" loading="lazy" class="w-full h-full object-cover">
-                        <span v-else class="material-symbols-outlined w-full h-full flex items-center justify-center text-slate-400">person</span>
-                     </div>
-                     <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                           <h4 class="font-bold text-slate-900 dark:text-white text-sm">{{ (comment.user && comment.user.name) ? comment.user.name : 'Deleted user' }}</h4>
-                           <span class="text-xs text-slate-500">{{ relativeFromNow(comment.createdAt) }}</span>
-                        </div>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{{ comment.content }}</p>
-                     </div>
+              <div v-else-if="episodes.length" class="mt-6 grid gap-3 sm:grid-cols-2">
+                <RouterLink
+                  v-for="episode in episodes"
+                  :key="episode.id"
+                  :to="movie.isPremiumLocked ? '/pricing' : { path: `/watch/${movie.slug}`, query: { episodeId: episode.id } }"
+                  class="rounded-2xl border p-4 transition-colors"
+                  :class="
+                    movie.isPremiumLocked
+                      ? 'border-amber-500/18 bg-amber-500/8 text-slate-700 dark:text-slate-200'
+                      : 'border-slate-200 bg-slate-50 hover:border-primary/28 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-900'
+                  "
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-black text-slate-900 dark:text-white">
+                        Tập {{ String(episode.epNo).padStart(2, '0') }}: {{ episode.title }}
+                      </p>
+                      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {{ episode.durationSeconds ? `${Math.round(episode.durationSeconds / 60)} phút` : 'Video stream' }}
+                      </p>
+                    </div>
+                    <span class="material-symbols-outlined text-primary">{{ movie.isPremiumLocked ? 'lock' : 'play_circle' }}</span>
                   </div>
-                  
-                  <div v-if="!landing.comments.items.length" class="text-center py-8 text-slate-500 dark:text-slate-400">
-                     No comments yet. Be the first to share your thoughts!
-                  </div>
-               </div>
+                </RouterLink>
+              </div>
+
+              <div v-else class="empty-state mt-6">
+                <div class="flex size-18 items-center justify-center rounded-full bg-primary/12 text-primary">
+                  <span class="material-symbols-outlined text-4xl">movie</span>
+                </div>
+                <h3 class="section-title">Đây là phim lẻ.</h3>
+                <p class="page-copy text-center">Không có danh sách tập riêng cho nội dung này, bạn có thể xem trực tiếp bằng nút “Xem ngay”.</p>
+              </div>
             </div>
 
-          </div>
-          
-          <!-- Right Column: Related Movies Sidebar -->
-          <div class="lg:col-span-4 space-y-6">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-bold text-slate-900 dark:text-white">Related Movies</h3>
-              <RouterLink to="/explore" class="text-primary text-sm font-bold hover:underline">View All</RouterLink>
-            </div>
-            
-            <div class="space-y-4">
-               <template v-if="landing.related && landing.related.length">
-                   <RouterLink v-for="movie in landing.related.slice(0, 5)" :key="movie.id" :to="`/movies/${movie.slug}`" class="flex gap-4 group block">
-                       <div class="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 bg-slate-200 dark:bg-slate-800">
-                         <img loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition-transform" :alt="movie.title" :src="movie.posterUrl || movie.backdropUrl" />
-                       </div>
-                      <div class="flex flex-col justify-center py-1">
-                         <h4 class="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2">{{ movie.title }}</h4>
-                         <p class="text-xs text-slate-500 mt-1">{{ movie.releaseYear }} • {{ movie.genres?.[0] || 'Movie' }} • {{ movie.imdbRating?.toFixed(1) || 'N/A' }}</p>
-                         <div class="mt-auto text-xs font-bold text-primary flex items-center gap-1">
-                            <span class="material-symbols-outlined text-sm">play_circle</span> WATCH
-                         </div>
+            <div v-show="activeTab === 'comments'" class="p-6 sm:p-7">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">Bình luận</h2>
+                  <p class="section-copy">Trao đổi cảm nhận trực tiếp dưới trang chi tiết phim.</p>
+                </div>
+              </div>
+
+              <div class="panel-muted mt-6 p-5">
+                <textarea
+                  v-model="commentText"
+                  class="control-field min-h-[120px] resize-none"
+                  placeholder="Chia sẻ cảm nhận của bạn về bộ phim này..."
+                ></textarea>
+                <div class="mt-4 flex justify-end">
+                  <button type="button" class="action-primary" :disabled="submittingComment || !canComment" @click="submitComment">
+                    <span v-if="submittingComment" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    <span v-else>{{ canComment ? 'Gửi bình luận' : 'Đăng nhập để bình luận' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="commentsState.items.length" class="mt-6 space-y-4">
+                <article
+                  v-for="comment in commentsState.items"
+                  :key="comment.id"
+                  class="panel-muted p-5"
+                >
+                  <div class="flex items-start gap-4">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                      <img
+                        v-if="comment.user && comment.user.avatarUrl"
+                        :src="comment.user.avatarUrl"
+                        :alt="comment.user.name || 'User'"
+                        class="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <span v-else class="material-symbols-outlined text-slate-400">person</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-sm font-black text-slate-900 dark:text-white">
+                          {{ comment.user?.name || 'Deleted user' }}
+                        </p>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ relativeFromNow(comment.createdAt) }}</span>
                       </div>
-                   </RouterLink>
-               </template>
-               <div v-else class="text-sm text-slate-500 dark:text-slate-400 text-center py-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                  No related movies found.
-               </div>
-            </div>
-            
-            <!-- Ad/Promo Card -->
-            <div class="mt-8 p-6 rounded-2xl bg-primary/10 border border-primary/20">
-              <h4 class="font-bold text-primary text-sm mb-2">STREAMVUE PREMIUM</h4>
-              <p class="text-xs text-slate-600 dark:text-slate-400 mb-4">Ad-free streaming, 4K UHD quality, and offline downloads.</p>
-              <button class="w-full py-3 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary/90 transition-colors">UPGRADE NOW</button>
+                      <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{{ comment.content }}</p>
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              <div v-else class="empty-state mt-6">
+                <div class="flex size-18 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                  <span class="material-symbols-outlined text-4xl">chat</span>
+                </div>
+                <h3 class="section-title">Chưa có bình luận nào.</h3>
+                <p class="page-copy text-center">Hãy là người đầu tiên để lại cảm nhận cho bộ phim này.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <div class="space-y-6">
+          <article class="panel-surface p-6">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Phim liên quan</h2>
+                <p class="section-copy">Các đề xuất gần nhất dựa trên title hiện tại.</p>
+              </div>
+              <RouterLink to="/explore" class="text-sm font-bold text-primary hover:underline">Mở thư viện</RouterLink>
+            </div>
+
+            <div v-if="relatedMovies.length" class="mt-6 space-y-4">
+              <RouterLink
+                v-for="related in relatedMovies.slice(0, 5)"
+                :key="related.id"
+                :to="`/movies/${related.slug}`"
+                class="group flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-colors hover:border-primary/25 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-900"
+              >
+                <div class="h-28 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                  <img :src="related.posterUrl || related.backdropUrl" :alt="related.title" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                </div>
+                <div class="min-w-0 py-1">
+                  <h3 class="line-clamp-2 text-sm font-black text-slate-900 dark:text-white">{{ related.title }}</h3>
+                  <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    {{ related.releaseYear || 'N/A' }} • {{ related.imdbRating?.toFixed(1) || 'N/A' }} IMDb
+                  </p>
+                  <p class="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-primary">Open detail</p>
+                </div>
+              </RouterLink>
+            </div>
+
+            <div v-else class="empty-state mt-6">
+              <div class="flex size-18 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                <span class="material-symbols-outlined text-4xl">video_search</span>
+              </div>
+              <h3 class="section-title">Chưa có phim liên quan.</h3>
+              <p class="page-copy text-center">Hệ thống hiện chưa trả về danh sách đề xuất cho phim này.</p>
+            </div>
+          </article>
+
+          <article class="panel-surface p-6">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Hành động nhanh</h2>
+                <p class="section-copy">Các bước phổ biến được gom lại thành một cụm phụ trợ.</p>
+              </div>
+            </div>
+            <div class="mt-6 space-y-3">
+              <RouterLink :to="watchNowTo" class="action-primary w-full justify-start">
+                <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                Phát ngay
+              </RouterLink>
+              <button type="button" class="action-secondary w-full justify-start" @click="addToWatchlist">
+                <span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+                Lưu vào watchlist
+              </button>
+              <RouterLink to="/pricing" class="action-secondary w-full justify-start">
+                <span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+                Xem các gói VIP
+              </RouterLink>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section v-if="relatedMovies.length" class="space-y-5">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Có thể bạn cũng thích</h2>
+            <p class="section-copy">Grid phim liên quan theo cùng nhịp trình bày với explore và home.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+          <MovieCard v-for="related in relatedMovies.slice(0, 8)" :key="`grid-${related.id}`" :movie="related" :compact="true" />
+        </div>
+      </section>
     </template>
   </div>
 </template>

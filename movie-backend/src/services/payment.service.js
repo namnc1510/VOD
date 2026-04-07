@@ -25,6 +25,88 @@ function sortObject(obj) {
   return sorted;
 }
 
+function generateVnpayUrl(orderId, amount, orderInfo, ipAddr) {
+  const vnpParams = {
+    vnp_Version: '2.1.0',
+    vnp_Command: 'pay',
+    vnp_TmnCode: config.vnpTmnCode,
+    vnp_Amount: amount * 100, // VNPAY expects amount in smallest currency unit
+    vnp_CurrCode: 'VND',
+    vnp_TxnRef: orderId.toString(),
+    vnp_OrderInfo: orderInfo,
+    vnp_OrderType: 'other',
+    vnp_Locale: 'vn',
+    vnp_ReturnUrl: config.vnpReturnUrl,
+    vnp_IpAddr: ipAddr,
+    vnp_CreateDate: formatVnpayDate(new Date()),
+  };
+
+  const sortedParams = sortObject(vnpParams);
+  const signData = new URLSearchParams(sortedParams).toString();
+  const hmac = crypto.createHmac('sha512', config.vnpHashSecret);
+  const secureHash = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+  sortedParams['vnp_SecureHash'] = secureHash;
+
+  const paymentUrl = `${config.vnpUrl}?${new URLSearchParams(sortedParams).toString()}`;
+  return paymentUrl;
+}
+
+function isLocalUrl(value) {
+  return /:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(String(value || ''));
+}
+
+function ensureVnpayConfigReady() {
+  const issues = [];
+
+  if (!config.vnpHashSecret || config.vnpHashSecret === 'SECRET_GOES_HERE') {
+    issues.push('VNP_HASHSECRET');
+  }
+
+  if (!config.vnpReturnUrl) {
+    issues.push('VNP_RETURNURL');
+  }
+
+  if (config.env === 'production') {
+    if (!config.vnpTmnCode || config.vnpTmnCode === 'VNBTS001') {
+      issues.push('VNP_TMNCODE');
+    }
+    if (isLocalUrl(config.vnpReturnUrl)) {
+      issues.push('VNP_RETURNURL');
+    }
+    if (isLocalUrl(config.frontendPaymentSuccessUrl)) {
+      issues.push('FRONTEND_PAYMENT_SUCCESS_URL');
+    }
+    if (isLocalUrl(config.frontendPaymentErrorUrl)) {
+      issues.push('FRONTEND_PAYMENT_ERROR_URL');
+    }
+  }
+
+  if (issues.length > 0) {
+    throw new HttpError(
+      500,
+      `VNPAY is not configured correctly: ${Array.from(new Set(issues)).join(', ')}`
+    );
+  }
+}
+
+function parseAnalyticsDate(value, boundary) {
+  if (!value) return null;
+
+  const raw = String(value).trim();
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  const normalized = isDateOnly
+    ? `${raw}T${boundary === 'start' ? '00:00:00.000' : '23:59:59.999'}Z`
+    : raw;
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new HttpError(400, `Invalid ${boundary} date`);
+  }
+
+  return parsed;
+}
+
 async function getPlans() {
   let setting = await Setting.findOne({ key: 'pricing' });
   if (!setting) {
@@ -74,7 +156,9 @@ async function processCheckout(userId, plan, billingCycle, ipAddr) {
     return { status: 'success', message: 'Free plan activated' };
   }
 
-  // Create pending transaction record
+  ensureVnpayConfigReady();
+
+  // Create pending transaction
   const transaction = await Transaction.create({
     user: user._id,
     amount,
@@ -85,37 +169,13 @@ async function processCheckout(userId, plan, billingCycle, ipAddr) {
     paymentMethod: 'vnpay',
   });
 
-  // Generate VNPAY URL
-  const date = new Date();
-  const createDate = formatVnpayDate(date);
-  const orderId = transaction._id.toString();
-
-  const vnp_Params = {
-    vnp_Version: '2.1.0',
-    vnp_Command: 'pay',
-    vnp_TmnCode: config.vnpTmnCode,
-    vnp_Locale: 'vn',
-    vnp_CurrCode: 'VND',
-    vnp_TxnRef: orderId,
-    vnp_OrderInfo: `Thanh toan goi ${plan} (${billingCycle}) cho user ${user.email}`,
-    vnp_OrderType: 'other',
-    vnp_Amount: amount * 100, // VNPAY amount is in VND cents
-    vnp_ReturnUrl: config.vnpReturnUrl,
-    vnp_IpAddr: ipAddr || '127.0.0.1',
-    vnp_CreateDate: createDate,
-  };
-
-  const sortedParams = sortObject(vnp_Params);
-  const signData = new URLSearchParams(sortedParams).toString();
-  const hmac = crypto.createHmac('sha512', config.vnpHashSecret);
-  const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-  
-  const paymentUrl = `${config.vnpUrl}?${signData}&vnp_SecureHash=${signed}`;
+  // Generate VNPAY payment URL
+  const vnpUrl = generateVnpayUrl(transaction._id, amount, `VIP ${plan} ${billingCycle}`, ipAddr);
 
   return {
-    status: 'pending',
-    paymentUrl,
-    transactionId: orderId
+    status: 'redirect',
+    paymentUrl: vnpUrl,
+    transactionId: transaction._id
   };
 }
 
@@ -220,8 +280,8 @@ async function getAnalytics(startDate, endDate) {
   const match = { status: 'completed' };
   if (startDate || endDate) {
     match.createdAt = {};
-    if (startDate) match.createdAt.$gte = new Date(startDate);
-    if (endDate) match.createdAt.$lte = new Date(endDate);
+    if (startDate) match.createdAt.$gte = parseAnalyticsDate(startDate, 'start');
+    if (endDate) match.createdAt.$lte = parseAnalyticsDate(endDate, 'end');
   }
 
   const [summary] = await Transaction.aggregate([

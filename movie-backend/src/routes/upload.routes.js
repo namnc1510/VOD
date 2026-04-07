@@ -13,6 +13,20 @@ const authorizeRole = require('../middlewares/authorize-role');
 const { errorResponse, successResponse } = require('../utils/api-response');
 
 const router = express.Router();
+const localUploadDir = path.join(__dirname, '../../data/uploads');
+
+function ensureLocalUploadDir() {
+  fs.mkdirSync(localUploadDir, { recursive: true });
+}
+
+function buildAbsoluteUploadUrl(req, filename) {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  return `${baseUrl}/uploads/${filename}`;
+}
+
+function fileFilter(_req, _file, cb) {
+  cb(null, true);
+}
 
 function createUpload() {
   const limits = {
@@ -21,11 +35,22 @@ function createUpload() {
   };
 
   if (!cloudinaryConfig.enabled) {
-    // If Cloudinary is disabled, return a multer that will error out on upload attempts.
+    ensureLocalUploadDir();
+
+    const localStorage = multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        cb(null, localUploadDir);
+      },
+      filename: (_req, file, cb) => {
+        const ext = path.extname(file.originalname || '').slice(0, 16).toLowerCase();
+        cb(null, `${crypto.randomUUID()}${ext}`);
+      },
+    });
+
     return multer({
-      storage: multer.memoryStorage(),
-      limits: { fileSize: 0 },
-      fileFilter: (_req, _file, cb) => cb(new Error('Cloudinary is not configured. Upload disabled.')),
+      storage: localStorage,
+      limits,
+      fileFilter,
     });
   }
 
@@ -63,17 +88,20 @@ router.post(
       ? file.path
       : null;
 
-    if (!cloudUrl) {
+    if (!cloudUrl && !file.filename) {
       return res.status(500).json(errorResponse('Failed to retrieve secure upload URL'));
     }
 
+    const url = cloudUrl || buildAbsoluteUploadUrl(req, file.filename);
+    const provider = cloudUrl ? 'cloudinary' : 'local';
+
     return res.status(201).json(
       successResponse({
-        url: cloudUrl,
+        url,
         filename: file.filename || null,
         mimetype: file.mimetype,
         size: file.size,
-        provider: 'cloudinary',
+        provider,
       }),
     );
   },

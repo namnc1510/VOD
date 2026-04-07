@@ -12,13 +12,13 @@ const year = new Date().getFullYear();
 
 <template>
   <footer
-    class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-6 md:px-20 py-12"
+    class="border-t border-slate-200 bg-white py-12 transition-colors dark:border-slate-800 dark:bg-background-dark"
   >
-    <div class="flex flex-col md:flex-row justify-between gap-10">
+    <div class="mx-auto flex w-full max-w-[1440px] flex-col justify-between gap-10 px-4 sm:px-6 md:flex-row lg:px-8">
       <div class="flex flex-col gap-4 max-w-sm">
         <div class="flex items-center gap-3 text-primary">
-          <div class="size-6">
-            <img v-if="logoUrl" :src="logoUrl" loading="lazy" :alt="siteName" class="w-full h-full object-cover rounded-md" />
+          <div class="size-6 overflow-hidden rounded-md">
+            <img v-if="logoUrl" :src="logoUrl" loading="lazy" :alt="siteName" class="w-full h-full object-cover" />
             <svg v-else fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
               <path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
             </svg>
@@ -31,7 +31,7 @@ const year = new Date().getFullYear();
           {{ description || 'The best streaming experience for movies and TV series. Unlimited content, high quality, and no hidden fees.' }}
         </p>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-8">
+      <div class="grid grid-cols-2 gap-8 sm:grid-cols-3">
         <div class="flex flex-col gap-4">
           <h4
             class="text-slate-900 dark:text-white font-bold text-sm uppercase tracking-wider"
@@ -50,8 +50,8 @@ const year = new Date().getFullYear();
               >
             </li>
             <li>
-              <RouterLink class="hover:text-primary" to="/countries"
-                >Countries</RouterLink
+              <RouterLink class="hover:text-primary" to="/categories"
+                >Categories</RouterLink
               >
             </li>
             <li>
@@ -83,25 +83,25 @@ const year = new Date().getFullYear();
           </h4>
           <div class="flex gap-4">
             <a v-if="settingsStore.facebookUrl"
-              class="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all text-slate-500 hover:-translate-y-1"
+              class="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all hover:-translate-y-1 hover:bg-primary hover:text-white dark:bg-slate-800"
               :href="settingsStore.facebookUrl" target="_blank" rel="noopener noreferrer" title="Facebook"
             >
               <span class="material-symbols-outlined text-[20px]">facebook</span>
             </a>
             <a v-if="settingsStore.twitterUrl"
-              class="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all text-slate-500 hover:-translate-y-1"
+              class="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all hover:-translate-y-1 hover:bg-primary hover:text-white dark:bg-slate-800"
               :href="settingsStore.twitterUrl" target="_blank" rel="noopener noreferrer" title="Twitter"
             >
               <span class="material-symbols-outlined text-[20px]">alternate_email</span>
             </a>
             <a v-if="settingsStore.instagramUrl"
-              class="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all text-slate-500 hover:-translate-y-1"
+              class="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all hover:-translate-y-1 hover:bg-primary hover:text-white dark:bg-slate-800"
               :href="settingsStore.instagramUrl" target="_blank" rel="noopener noreferrer" title="Instagram"
             >
               <span class="material-symbols-outlined text-[20px]">photo_camera</span>
             </a>
              <a v-if="settingsStore.youtubeUrl"
-              class="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all text-slate-500 hover:-translate-y-1"
+              class="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all hover:-translate-y-1 hover:bg-primary hover:text-white dark:bg-slate-800"
               :href="settingsStore.youtubeUrl" target="_blank" rel="noopener noreferrer" title="YouTube"
             >
               <span class="material-symbols-outlined text-[20px]">play_circle</span>
@@ -111,7 +111,7 @@ const year = new Date().getFullYear();
       </div>
     </div>
     <div
-      class="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center"
+      class="mx-auto mt-12 w-full max-w-[1440px] border-t border-slate-200 px-4 pt-8 text-center dark:border-slate-800 sm:px-6 lg:px-8"
     >
       <p class="text-slate-400 text-xs">
         (c) {{ year }} {{ siteName }}. All rights reserved.

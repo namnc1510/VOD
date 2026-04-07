@@ -23,9 +23,11 @@ export default defineComponent({
       try {
         let params = {};
         if (dateRange.value && dateRange.value.length === 2) {
+          const start = dateRange.value[0].startOf('day');
+          const end = dateRange.value[1].endOf('day');
           params = {
-            startDate: dateRange.value[0].format('YYYY-MM-DD'),
-            endDate: dateRange.value[1].format('YYYY-MM-DD')
+            startDate: start.toISOString(),
+            endDate: end.toISOString()
           };
         }
         const res = await requestClient.get('/payment/analytics', { params, responseReturn: 'body' });
@@ -50,18 +52,18 @@ export default defineComponent({
 
     const summary = computed(() => data.value?.summary || { totalRevenue: 0, totalTransactions: 0 });
 
-    const lineChartOptions = computed(() => {
+    const lineChartOptions = computed<Record<string, any>>(() => {
       if (!data.value?.revenueOverTime || data.value.revenueOverTime.length === 0) return {};
       const arr = data.value.revenueOverTime;
       return {
-        tooltip: { trigger: 'axis' },
+        tooltip: { trigger: 'axis' as const },
         grid: { left: '1%', right: '3%', bottom: '2%', containLabel: true },
-        xAxis: { type: 'category', boundaryGap: false, data: arr.map((item: any) => dayjs(item.date).format('DD MMM')) },
-        yAxis: { type: 'value' },
+        xAxis: { type: 'category' as const, boundaryGap: false, data: arr.map((item: any) => dayjs(item.date).format('DD MMM')) },
+        yAxis: { type: 'value' as const },
         series: [
           {
             name: 'Revenue (VND)',
-            type: 'line',
+            type: 'line' as const,
             itemStyle: { color: '#0ea5e9' },
             areaStyle: { opacity: 0.1, color: '#0ea5e9' },
             data: arr.map((item: any) => item.revenue),
@@ -71,7 +73,7 @@ export default defineComponent({
       };
     });
 
-    const pieChartOptions = computed(() => {
+    const pieChartOptions = computed<Record<string, any>>(() => {
       if (!data.value?.planDistribution || data.value.planDistribution.length === 0) return {};
       const arr = data.value.planDistribution;
       
@@ -82,12 +84,12 @@ export default defineComponent({
       };
 
       return {
-        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        tooltip: { trigger: 'item' as const, formatter: '{b}: {c} ({d}%)' },
         legend: { bottom: '0%', left: 'center' },
         series: [
           {
             name: 'Transactions',
-            type: 'pie',
+            type: 'pie' as const,
             center: ['50%', '45%'],
             radius: ['45%', '70%'],
             avoidLabelOverlap: false,
@@ -114,7 +116,7 @@ export default defineComponent({
           renderLineChart(options);
         });
       }
-    });
+    }, { deep: true, immediate: true });
 
     watch(pieChartOptions, (options) => {
       if (options.series) {
@@ -122,7 +124,7 @@ export default defineComponent({
           renderPieChart(options);
         });
       }
-    });
+    }, { deep: true, immediate: true });
 
     function formatCurrency(val: number) {
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
