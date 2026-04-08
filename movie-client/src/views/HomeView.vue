@@ -5,7 +5,7 @@ import { RouterLink } from 'vue-router';
 import MovieCard from '../components/MovieCard.vue';
 import { getApiErrorMessage } from '../services/api';
 import { getHomeFeed } from '../services/discovery';
-import { formatRuntime } from '../utils/format';
+import { formatNumber, formatRuntime } from '../utils/format';
 
 const loading = ref(true);
 const error = ref('');
@@ -92,6 +92,44 @@ const heroMetaParts = computed(() => {
   if (genres) parts.push(genres);
 
   return parts;
+});
+
+const heroMetaCompactParts = computed(() => heroMetaParts.value.slice(0, 4));
+const heroDesktopInfoCards = computed(() => heroInfoCards.value.slice(0, 2));
+
+const heroInfoCards = computed(() => {
+  const hero = activeHero.value;
+  if (!hero) return [];
+
+  const accessMode = String(hero.accessMode || 'free').trim();
+
+  return [
+    {
+      label: 'Release',
+      value: hero.releaseYear ? String(hero.releaseYear) : 'TBA'
+    },
+    {
+      label: 'Runtime',
+      value: formatRuntime(hero.durationMinutes) || 'N/A'
+    },
+    {
+      label: 'Region',
+      value: formatNameList(hero.countries, 'Global')
+    },
+    {
+      label: 'Access',
+      value: accessMode ? `${accessMode.charAt(0).toUpperCase()}${accessMode.slice(1)}` : 'Free'
+    }
+  ];
+});
+
+const heroQueue = computed(() => {
+  if (heroSlides.value.length <= 1) return [];
+
+  return heroSlides.value
+    .map((item, index) => ({ ...item, _heroIndex: index }))
+    .filter((item) => item._heroIndex !== heroIndex.value)
+    .slice(0, 1);
 });
 
 const hoverPalette = [
@@ -237,62 +275,188 @@ onBeforeUnmount(() => {
     <div v-else-if="error" class="rounded-[28px] border border-red-200 bg-red-50 px-8 py-14 text-center text-red-500 shadow-sm dark:border-red-900/30 dark:bg-red-900/20">{{ error }}</div>
 
     <template v-else>
-      <section v-if="activeHero">
+      <section v-if="activeHero" class="mx-auto w-full max-w-[1120px]">
         <div
-          class="group relative overflow-hidden rounded-[32px] border border-slate-200/70 bg-slate-950 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.85)] dark:border-white/10"
+          class="group relative overflow-hidden rounded-[24px] border border-slate-200/70 bg-slate-950 shadow-[0_24px_72px_-42px_rgba(15,23,42,0.88)] dark:border-white/10 lg:rounded-[32px]"
           @mouseenter="stopHeroAutoplay"
           @mouseleave="startHeroAutoplay"
         >
           <div class="absolute inset-0">
-            <div class="absolute inset-0 scale-105 bg-cover bg-center blur-[2px] transition-transform duration-700 group-hover:scale-[1.08]" :style="{ backgroundImage: `url(${activeHero.backdropUrl || activeHero.posterUrl})` }"></div>
-            <div class="absolute inset-0" style="background-image: linear-gradient(90deg, rgba(2, 6, 23, 0.94) 0%, rgba(2, 6, 23, 0.78) 34%, rgba(2, 6, 23, 0.3) 70%, rgba(2, 6, 23, 0.14) 100%);"></div>
-            <div class="absolute inset-0" style="background-image: linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0) 32%, rgba(2, 6, 23, 0.66) 100%);"></div>
+            <div class="absolute inset-0 scale-105 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.07]" :style="{ backgroundImage: `url(${activeHero.backdropUrl || activeHero.posterUrl})` }"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.18),transparent_28%)]"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.16)_0%,rgba(2,6,23,0.18)_22%,rgba(2,6,23,0.84)_100%)] sm:bg-[linear-gradient(180deg,rgba(2,6,23,0.22)_0%,rgba(2,6,23,0.16)_18%,rgba(2,6,23,0.84)_100%)]"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.2)_0%,rgba(2,6,23,0.28)_32%,rgba(2,6,23,0.88)_100%)] lg:bg-[linear-gradient(92deg,rgba(2,6,23,0.97)_0%,rgba(2,6,23,0.9)_48%,rgba(2,6,23,0.4)_74%,rgba(2,6,23,0.88)_100%)]"></div>
           </div>
-          <div class="relative z-10 grid min-h-[480px] lg:min-h-[560px] lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div class="flex flex-col justify-end px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12 xl:px-12">
-              <div class="max-w-[640px]">
-            <div class="flex flex-col gap-5">
-              <div class="mb-1 flex flex-wrap items-center gap-2.5">
-                <span class="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-primary backdrop-blur-md">
-                  {{ activeHero.isFeatured ? 'Featured' : 'Most Watched' }}
-                </span>
-                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md">IMDB {{ activeHero.imdbRating?.toFixed(1) || 'N/A' }}</span>
-              </div>
-              <h1 class="max-w-[11ch] text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
-                {{ activeHero.title }}
-              </h1>
-              <p class="max-w-[36rem] text-sm leading-relaxed text-slate-200 sm:text-base lg:text-lg xl:text-xl">
-                {{ activeHero.overview || 'Discover what everyone is watching on the platform right now.' }}
-              </p>
-              <div class="flex flex-wrap gap-2.5">
-                <span v-for="(part, idx) in heroMetaParts" :key="`${part}-${idx}`" class="hero-meta-pill rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-sm font-medium text-slate-200 backdrop-blur-md">
-                  {{ part }}
-                  <span v-if="idx < heroMetaParts.length - 1">•</span>
-                </span>
-              </div>
-            </div>
-            <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <RouterLink :to="`/watch/${activeHero.slug}`" class="flex h-14 min-w-[168px] items-center justify-center gap-2 rounded-2xl bg-primary px-8 text-lg font-bold text-white shadow-xl shadow-primary/30 transition-transform hover:scale-[1.02]">
-                <span class="material-symbols-outlined">play_arrow</span>
-                <span>Watch Now</span>
-              </RouterLink>
-              <RouterLink :to="`/movies/${activeHero.slug}`" class="flex h-14 min-w-[168px] items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-8 text-lg font-bold text-white backdrop-blur-md transition-all hover:bg-white/16">
-                <span class="material-symbols-outlined">info</span>
-                <span>Details</span>
-              </RouterLink>
-            </div>
-              </div>
-            </div>
-            <div class="hidden items-end justify-end p-8 lg:flex xl:p-10">
-              <div class="w-full max-w-[280px] rounded-[28px] border border-white/12 bg-white/10 p-3 text-white shadow-2xl backdrop-blur-xl">
-                <div class="aspect-[3/4] overflow-hidden rounded-[22px] bg-slate-900/50">
-                  <img :src="activeHero.posterUrl || activeHero.backdropUrl" :alt="activeHero.title" loading="lazy" class="h-full w-full object-cover object-top" />
+          <div class="relative z-10 grid h-[calc(100svh-122px)] min-h-[340px] max-h-[620px] gap-4 p-4 sm:h-[calc(100svh-130px)] sm:min-h-[380px] sm:max-h-[680px] sm:p-5 lg:h-[calc(100svh-108px)] lg:min-h-[500px] lg:max-h-[760px] lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-5 lg:p-5 xl:h-[calc(100svh-114px)] xl:max-h-[820px] xl:grid-cols-[minmax(0,1fr)_290px] xl:p-6">
+            <div class="flex flex-col justify-between gap-4 lg:gap-5">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <span class="rounded-full border border-primary/35 bg-primary/18 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-primary backdrop-blur-md sm:px-3 sm:text-[11px] sm:tracking-[0.26em]">
+                    {{ activeHero.isFeatured ? 'Editor Pick' : 'Most Watched' }}
+                  </span>
+                  <span class="rounded-full border border-white/12 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-md sm:px-3 sm:text-[11px] sm:tracking-[0.2em]">
+                    IMDB {{ activeHero.imdbRating?.toFixed(1) || 'N/A' }}
+                  </span>
+                  <span v-if="heroSlides.length > 1" class="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/75 backdrop-blur-md sm:px-3 sm:text-[11px] sm:tracking-[0.18em]">
+                    {{ String(heroIndex + 1).padStart(2, '0') }} / {{ String(heroSlides.length).padStart(2, '0') }}
+                  </span>
                 </div>
-                <div class="px-1 pb-2 pt-4">
-                  <p class="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200/80">Spotlight</p>
-                  <p class="mt-2 text-2xl font-bold leading-tight">{{ activeHero.title }}</p>
-                  <p class="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-200/80">{{ activeHero.overview || 'Watch the featured title from a cleaner hero layout.' }}</p>
+                <div v-if="heroSlides.length > 1" class="hidden items-center gap-2 lg:flex">
+                  <button
+                    @click="prevHero"
+                    class="flex size-10 items-center justify-center rounded-full border border-white/12 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/45"
+                    aria-label="Previous hero"
+                  >
+                    <span class="material-symbols-outlined">chevron_left</span>
+                  </button>
+                  <button
+                    @click="nextHero"
+                    class="flex size-10 items-center justify-center rounded-full border border-white/12 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/45"
+                    aria-label="Next hero"
+                  >
+                    <span class="material-symbols-outlined">chevron_right</span>
+                  </button>
                 </div>
+              </div>
+              <div class="max-w-[620px] border-0 bg-transparent p-0 shadow-none backdrop-blur-0 sm:rounded-[24px] sm:border sm:border-white/12 sm:bg-white/[0.08] sm:p-5 sm:shadow-2xl sm:backdrop-blur-xl lg:rounded-[28px] lg:max-w-[640px] lg:p-6">
+                <div class="flex flex-col gap-3 sm:gap-4">
+                  <div class="space-y-2.5 sm:space-y-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-300/80 sm:text-xs sm:tracking-[0.26em] lg:text-sm lg:tracking-[0.3em]">CinemaStream Spotlight</p>
+                    <h1 class="max-w-[10ch] text-[1.75rem] font-black leading-[0.92] tracking-tight text-white sm:max-w-[11ch] sm:text-[2.2rem] lg:text-[2.8rem] xl:text-[3.3rem]">
+                      {{ activeHero.title }}
+                    </h1>
+                    <p class="line-clamp-2 max-w-[30rem] text-[12px] leading-relaxed text-slate-200/92 sm:max-w-[34rem] sm:text-sm lg:max-w-[38rem] lg:text-base">
+                      {{ activeHero.overview || 'Discover what everyone is watching on the platform right now.' }}
+                    </p>
+                  </div>
+
+                  <div class="flex flex-wrap gap-1.5 sm:hidden">
+                    <span
+                      v-for="(part, idx) in heroMetaCompactParts"
+                      :key="`${part}-${idx}`"
+                      class="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] font-semibold text-slate-100 backdrop-blur-md"
+                    >
+                      {{ part }}
+                    </span>
+                  </div>
+
+                  <div class="hidden flex-wrap gap-2 sm:flex lg:hidden">
+                    <span
+                      v-for="(part, idx) in heroMetaCompactParts"
+                      :key="`${part}-${idx}`"
+                      class="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-xs font-semibold text-slate-100 backdrop-blur-md"
+                    >
+                      {{ part }}
+                    </span>
+                  </div>
+
+                  <div class="hidden flex-wrap gap-2 lg:flex">
+                    <span
+                      v-for="(part, idx) in heroMetaParts"
+                      :key="`${part}-${idx}`"
+                      class="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-sm font-semibold text-slate-100 backdrop-blur-md"
+                    >
+                      {{ part }}
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2 sm:hidden">
+                    <article
+                      v-for="card in heroInfoCards.slice(0, 2)"
+                      :key="card.label"
+                      class="rounded-2xl border border-white/10 bg-black/28 px-3 py-2 backdrop-blur-sm"
+                    >
+                      <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{{ card.label }}</p>
+                      <p class="mt-1 text-[13px] font-bold text-white">{{ card.value }}</p>
+                    </article>
+                  </div>
+
+                  <div class="hidden grid-cols-2 gap-2.5 lg:grid">
+                    <article
+                      v-for="card in heroDesktopInfoCards"
+                      :key="card.label"
+                      class="rounded-[18px] border border-white/10 bg-black/20 px-3 py-2.5 backdrop-blur-sm xl:px-3.5"
+                    >
+                      <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 xl:text-[11px] xl:tracking-[0.2em]">{{ card.label }}</p>
+                      <p class="mt-1 text-sm font-bold text-white xl:mt-1.5">{{ card.value }}</p>
+                    </article>
+                  </div>
+                </div>
+
+                <div class="mt-4 grid gap-2.5 sm:mt-5 sm:flex sm:flex-wrap sm:gap-3">
+                  <RouterLink :to="`/watch/${activeHero.slug}`" class="flex h-12 w-full items-center justify-center gap-2 rounded-[18px] bg-primary px-5 text-sm font-bold text-white shadow-[0_18px_42px_-18px_rgba(34,197,94,0.75)] transition-transform hover:scale-[1.02] sm:min-w-[160px] sm:w-auto sm:text-base lg:h-[50px]">
+                    <span class="material-symbols-outlined">play_arrow</span>
+                    <span>Watch Now</span>
+                  </RouterLink>
+                  <RouterLink :to="`/movies/${activeHero.slug}`" class="flex h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-white/15 bg-white/10 px-5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/16 sm:min-w-[160px] sm:w-auto sm:text-base lg:h-[50px]">
+                    <span class="material-symbols-outlined">info</span>
+                    <span>Details</span>
+                  </RouterLink>
+                </div>
+
+                <div class="mt-3 flex flex-col items-start gap-3 sm:mt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between lg:hidden">
+                  <p class="text-xs font-medium text-white/70 sm:text-sm">
+                    {{ formatNumber(activeHero.views || 0) }} views shaping this pick.
+                  </p>
+                  <div v-if="heroSlides.length > 1" class="flex items-center gap-2">
+                    <button
+                      @click="prevHero"
+                      class="flex size-9 items-center justify-center rounded-full border border-white/12 bg-black/25 text-white/85 backdrop-blur sm:size-10"
+                      aria-label="Previous hero"
+                    >
+                      <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+                    </button>
+                    <button
+                      @click="nextHero"
+                      class="flex size-9 items-center justify-center rounded-full border border-white/12 bg-black/25 text-white/85 backdrop-blur sm:size-10"
+                      aria-label="Next hero"
+                    >
+                      <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hidden lg:flex lg:flex-col lg:gap-2.5">
+              <div class="overflow-hidden rounded-[28px] border border-white/12 bg-white/[0.08] p-2.5 shadow-2xl backdrop-blur-xl">
+                <div class="aspect-[4/5] overflow-hidden rounded-[24px] bg-slate-900/60">
+                  <img :src="activeHero.posterUrl || activeHero.backdropUrl" :alt="activeHero.title" loading="lazy" class="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]" />
+                </div>
+                <div class="px-2 pb-2 pt-3 text-white">
+                  <div class="flex items-center justify-between gap-4">
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300/70">Spotlight</p>
+                      <p class="mt-2 text-xl font-bold leading-tight xl:text-2xl">{{ activeHero.title }}</p>
+                    </div>
+                    <span class="rounded-full border border-white/12 bg-black/25 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white/75">
+                      {{ activeHero.releaseYear || 'Now' }}
+                    </span>
+                  </div>
+                  <p class="mt-3 line-clamp-2 text-sm leading-relaxed text-slate-200/85">
+                    {{ formatNameList(activeHero.genres, 'Curated selection') }}
+                  </p>
+                </div>
+              </div>
+
+              <div v-if="heroQueue.length" class="grid gap-2.5">
+                <button
+                  v-for="queued in heroQueue"
+                  :key="queued.slug"
+                  type="button"
+                  @click="setHeroIndex(queued._heroIndex)"
+                  class="flex items-center gap-3 rounded-[22px] border border-white/10 bg-white/[0.06] p-2.5 text-left text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/[0.1]"
+                >
+                  <div class="h-16 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-900/60 xl:h-18 xl:w-14">
+                    <img :src="queued.posterUrl || queued.backdropUrl" :alt="queued.title" loading="lazy" class="h-full w-full object-cover" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Up next</p>
+                    <p class="mt-1 line-clamp-1 text-sm font-bold text-white">{{ queued.title }}</p>
+                    <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-300/80">
+                      {{ formatNameList(queued.genres, queued.releaseYear ? String(queued.releaseYear) : 'Library pick') }}
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -300,7 +464,7 @@ onBeforeUnmount(() => {
           <button
             v-if="heroSlides.length > 1"
             @click="prevHero"
-            class="absolute left-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50 md:flex"
+            class="absolute left-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50 md:flex lg:hidden"
             aria-label="Previous hero"
           >
             <span class="material-symbols-outlined">chevron_left</span>
@@ -308,7 +472,7 @@ onBeforeUnmount(() => {
           <button
             v-if="heroSlides.length > 1"
             @click="nextHero"
-            class="absolute right-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50 md:flex"
+            class="absolute right-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50 md:flex lg:hidden"
             aria-label="Next hero"
           >
             <span class="material-symbols-outlined">chevron_right</span>
@@ -357,40 +521,62 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section v-for="section in sections" :key="section.key" class="group/section space-y-5">
-        <div class="flex items-center justify-between gap-4 px-1">
-          <div>
-            <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{{ section.title }}</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ section.description }}</p>
-          </div>
-          <RouterLink to="/explore" class="shrink-0 text-sm font-semibold text-primary hover:underline">View All</RouterLink>
-        </div>
-        
-        <div class="relative">
-          <button 
-            @click="scroll(section.key, -1)"
-            class="absolute left-4 top-1/2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 opacity-0 shadow-xl transition-all hover:scale-105 hover:text-primary group-hover/section:opacity-100 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300 md:flex"
-            aria-label="Scroll left"
-          >
-            <span class="material-symbols-outlined font-bold">chevron_left</span>
-          </button>
+      <section v-for="section in sections" :key="section.key" class="group/section">
+        <div class="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)] xl:gap-6">
+          <div class="rounded-[28px] border border-slate-200/70 bg-white/78 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/58 xl:flex xl:flex-col xl:justify-between">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{{ section.title }}</h2>
+              <p class="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{{ section.description }}</p>
+            </div>
 
-          <div class="overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/55">
-            <div 
-              :ref="el => { if (el) sectionRefs[section.key] = el }"
-              class="flex snap-x gap-4 overflow-x-auto px-4 py-5 scrollbar-hide scroll-smooth sm:px-5 lg:gap-6 lg:px-6 lg:py-6"
-            >
-              <MovieCard v-for="(movie, idx) in section.items" :key="movie.id || idx" :movie="movie" />
+            <div class="mt-5 flex items-center justify-between gap-4 xl:mt-7 xl:flex-col xl:items-stretch">
+              <div class="hidden items-center gap-2 xl:flex">
+                <button
+                  @click="scroll(section.key, -1)"
+                  class="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:scale-105 hover:text-primary dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300"
+                  aria-label="Scroll left"
+                >
+                  <span class="material-symbols-outlined font-bold">chevron_left</span>
+                </button>
+                <button
+                  @click="scroll(section.key, 1)"
+                  class="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:scale-105 hover:text-primary dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300"
+                  aria-label="Scroll right"
+                >
+                  <span class="material-symbols-outlined font-bold">chevron_right</span>
+                </button>
+              </div>
+
+              <RouterLink to="/explore" class="shrink-0 text-sm font-semibold text-primary hover:underline">View All</RouterLink>
             </div>
           </div>
 
-          <button 
-            @click="scroll(section.key, 1)"
-            class="absolute right-4 top-1/2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 opacity-0 shadow-xl transition-all hover:scale-105 hover:text-primary group-hover/section:opacity-100 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300 md:flex"
-            aria-label="Scroll right"
-          >
-            <span class="material-symbols-outlined font-bold">chevron_right</span>
-          </button>
+          <div class="relative">
+            <button 
+              @click="scroll(section.key, -1)"
+              class="absolute left-4 top-1/2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 opacity-0 shadow-xl transition-all hover:scale-105 hover:text-primary group-hover/section:opacity-100 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300 md:flex xl:hidden"
+              aria-label="Scroll left"
+            >
+              <span class="material-symbols-outlined font-bold">chevron_left</span>
+            </button>
+
+            <div class="overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/55">
+              <div 
+                :ref="el => { if (el) sectionRefs[section.key] = el }"
+                class="flex snap-x gap-4 overflow-x-auto px-4 py-5 scrollbar-hide scroll-smooth sm:px-5 lg:gap-6 lg:px-6 lg:py-6"
+              >
+                <MovieCard v-for="(movie, idx) in section.items" :key="movie.id || idx" :movie="movie" />
+              </div>
+            </div>
+
+            <button 
+              @click="scroll(section.key, 1)"
+              class="absolute right-4 top-1/2 z-30 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 opacity-0 shadow-xl transition-all hover:scale-105 hover:text-primary group-hover/section:opacity-100 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-300 md:flex xl:hidden"
+              aria-label="Scroll right"
+            >
+              <span class="material-symbols-outlined font-bold">chevron_right</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -451,10 +637,6 @@ onBeforeUnmount(() => {
   background-color: var(--hover-bg);
   border-color: var(--hover-border);
   transform: translateY(-1px);
-}
-
-.hero-meta-pill > span {
-  display: none;
 }
 
 :global(.dark) .hover-tint-card:hover {

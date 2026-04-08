@@ -54,7 +54,7 @@ async function playRandomMovie() {
 
 <template>
   <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-md transition-colors dark:border-slate-800/80 dark:bg-background-dark/82">
-    <div class="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <div class="mx-auto flex w-full max-w-[1240px] items-center justify-between gap-4 px-4 py-3 sm:px-5 lg:px-6">
       <div class="flex min-w-0 items-center gap-6 lg:gap-10">
         <RouterLink to="/" class="flex min-w-0 items-center gap-3 text-primary">
           <div class="size-8 shrink-0 overflow-hidden rounded-lg">

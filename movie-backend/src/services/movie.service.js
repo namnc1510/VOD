@@ -4,6 +4,7 @@ const Category = require('../models/category.model');
 const Country = require('../models/country.model');
 const Quality = require('../models/quality.model');
 const Format = require('../models/format.model');
+const Person = require('../models/person.model');
 const HttpError = require('../utils/http-error');
 const slugify = require('../utils/slug');
 const {
@@ -19,6 +20,175 @@ const {
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
+const FALLBACK_ACTOR_POOL = [
+  'Leonardo DiCaprio',
+  'Scarlett Johansson',
+  'Robert Downey Jr.',
+  'Tom Hanks',
+  'Meryl Streep',
+  'Denzel Washington',
+  'Brie Larson',
+  'Kang-ho Song',
+  'Zendaya',
+  'Ryan Reynolds',
+  'Florence Pugh',
+  'Timothee Chalamet',
+  'Ana de Armas',
+  'John Boyega',
+  'Oscar Isaac',
+  'Margot Robbie',
+  'Emily Blunt',
+  'Dev Patel',
+  'Lupita Nyong\'o',
+  'Pedro Pascal'
+];
+const FALLBACK_DIRECTOR_POOL = [
+  'Christopher Nolan',
+  'Steven Spielberg',
+  'Martin Scorsese',
+  'Quentin Tarantino',
+  'Greta Gerwig',
+  'Bong Joon-ho',
+  'Denis Villeneuve',
+  'Patty Jenkins',
+  'Damien Chazelle',
+  'Jordan Peele',
+  'Ryan Coogler',
+  'Sofia Coppola'
+];
+
+function hashString(input) {
+  let hash = 0;
+  const source = String(input || '');
+
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
+function normalizeLegacyNames(input) {
+  const source = Array.isArray(input) ? input : input ? [input] : [];
+  const seen = new Set();
+
+  return source
+    .flatMap((item) => String(item || '').split(','))
+    .map((item) => String(item || '').trim())
+    .filter((item) => {
+      if (!item) return false;
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function pickSeedItems(pool, count, seed) {
+  if (!Array.isArray(pool) || pool.length === 0 || count <= 0) return [];
+
+  const size = Math.min(count, pool.length);
+  const result = [];
+  const seen = new Set();
+  let index = hashString(seed) % pool.length;
+  const step = pool.length > 1 ? (hashString(`${seed}-step`) % (pool.length - 1)) + 1 : 1;
+
+  while (result.length < size) {
+    const candidate = pool[index % pool.length];
+    if (!seen.has(candidate)) {
+      seen.add(candidate);
+      result.push(candidate);
+    }
+    index += step;
+  }
+
+  return result;
+}
+
+async function findOrCreatePersonByName(name, role) {
+  const trimmed = toTrimmedString(name);
+  if (!trimmed) return null;
+
+  const slug = slugify(trimmed);
+  if (!slug) return null;
+
+  await Person.updateOne(
+    { slug },
+    {
+      $setOnInsert: {
+        name: trimmed,
+        slug,
+        biography: `${trimmed} is featured in the StreamVue catalog.`,
+        avatarUrl: `https://i.pravatar.cc/300?u=${encodeURIComponent(slug)}`
+      },
+      $addToSet: {
+        knownFor: role
+      }
+    },
+    { upsert: true }
+  );
+
+  return Person.findOne({ slug })
+    .select('_id name slug avatarUrl biography knownFor')
+    .lean();
+}
+
+async function ensureMovieCredits(movie) {
+  if (!movie?._id) return movie;
+
+  const linkedActors = Array.isArray(movie.actors) ? movie.actors.filter((item) => item && item.name) : [];
+  const linkedDirectors = Array.isArray(movie.directors) ? movie.directors.filter((item) => item && item.name) : [];
+
+  const legacyCast = normalizeLegacyNames(movie.cast);
+  const legacyDirectors = normalizeLegacyNames(movie.director);
+
+  const castNames = legacyCast.length > 0
+    ? legacyCast
+    : linkedActors.length > 0
+      ? linkedActors.map((item) => item.name)
+      : pickSeedItems(FALLBACK_ACTOR_POOL, 3, `${movie.slug}-cast`);
+  const directorNames = legacyDirectors.length > 0
+    ? legacyDirectors
+    : linkedDirectors.length > 0
+      ? linkedDirectors.map((item) => item.name)
+      : pickSeedItems(FALLBACK_DIRECTOR_POOL, 1, `${movie.slug}-director`);
+
+  const actorDocs = linkedActors.length > 0
+    ? linkedActors
+    : await Promise.all(castNames.map((name) => findOrCreatePersonByName(name, 'acting')));
+  const directorDocs = linkedDirectors.length > 0
+    ? linkedDirectors
+    : await Promise.all(directorNames.map((name) => findOrCreatePersonByName(name, 'directing')));
+
+  const safeActors = actorDocs.filter(Boolean);
+  const safeDirectors = directorDocs.filter(Boolean);
+  const updateData = {};
+
+  if (legacyCast.length === 0 && castNames.length > 0) {
+    updateData.cast = castNames;
+  }
+  if (legacyDirectors.length === 0 && directorNames.length > 0) {
+    updateData.director = directorNames.join(', ');
+  }
+  if ((!Array.isArray(movie.actors) || movie.actors.length === 0) && safeActors.length > 0) {
+    updateData.actors = safeActors.map((item) => item._id);
+  }
+  if ((!Array.isArray(movie.directors) || movie.directors.length === 0) && safeDirectors.length > 0) {
+    updateData.directors = safeDirectors.map((item) => item._id);
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await Movie.updateOne({ _id: movie._id }, { $set: updateData });
+  }
+
+  return {
+    ...movie,
+    cast: castNames,
+    director: directorNames.join(', '),
+    actors: safeActors,
+    directors: safeDirectors
+  };
+}
 
 function normalizeMovieStatus(input) {
   const raw = typeof input === 'string' ? input.trim().toLowerCase() : '';
@@ -564,6 +734,8 @@ async function getMovieBySlug(slug, options) {
   if (!movie) {
     throw new HttpError(404, 'Movie not found');
   }
+
+  movie = await ensureMovieCredits(movie);
 
   return mapMovieDetail(movie);
 }

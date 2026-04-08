@@ -2,6 +2,13 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
+import {
+  buildPaymentActivity,
+  buildPaymentReceipt,
+  getPaymentFlow,
+  getPaymentHighlights,
+  getPaymentMethods
+} from '../data/showcase';
 import { api, getApiErrorMessage } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 
@@ -79,6 +86,17 @@ const selectedPrice = computed(() => {
   if (!id || !plans.value[id]) return 0;
   return isAnnual.value ? plans.value[id].annual : plans.value[id].monthly;
 });
+const paymentHighlights = computed(() => getPaymentHighlights());
+const paymentMethods = computed(() => getPaymentMethods());
+const paymentFlow = computed(() => getPaymentFlow());
+const paymentActivity = computed(() => buildPaymentActivity(
+  planCards.value.map((plan) => ({
+    label: plan.label,
+    price: isAnnual.value ? plans.value[plan.id].annual : plans.value[plan.id].monthly
+  })),
+  isAnnual.value
+));
+const checkoutReceipt = computed(() => buildPaymentReceipt(selectedPlan.value, selectedPrice.value, isAnnual.value));
 
 onMounted(async () => {
   try {
@@ -95,6 +113,18 @@ onMounted(async () => {
 
 function formatPrice(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+}
+
+function formatReceiptValue(row) {
+  if (row.type === 'money') {
+    return Number(row.value) === 0 ? 'Da bao gom' : formatPrice(row.value);
+  }
+
+  if (row.type === 'discount') {
+    return Number(row.value) > 0 ? `- ${formatPrice(row.value)}` : '0';
+  }
+
+  return row.value;
 }
 
 function handleSelectPlan(planId) {
@@ -188,15 +218,20 @@ async function processPayment() {
             <p class="text-2xl font-black text-slate-900 dark:text-white">{{ currentPlan.toUpperCase() }}</p>
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Đồng bộ trực tiếp từ hồ sơ tài khoản.</p>
           </article>
-          <article class="panel-muted p-5">
-            <p class="control-label">Billing</p>
-            <p class="text-2xl font-black text-slate-900 dark:text-white">{{ isAnnual ? 'Annual' : 'Monthly' }}</p>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Bạn có thể chuyển đổi trước khi thanh toán.</p>
-          </article>
-          <article class="panel-muted p-5">
-            <p class="control-label">Thanh toán</p>
-            <p class="text-2xl font-black text-slate-900 dark:text-white">VNPAY</p>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Checkout trả về backend và đồng bộ lại hồ sơ.</p>
+          <article
+            v-for="item in paymentHighlights"
+            :key="item.label"
+            class="panel-muted p-5"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="control-label">{{ item.label }}</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white">{{ item.value }}</p>
+              </div>
+              <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                <span class="material-symbols-outlined text-[20px]">{{ item.icon }}</span>
+              </div>
+            </div>
           </article>
         </div>
       </div>
@@ -330,6 +365,22 @@ async function processPayment() {
             <p class="text-base font-bold text-slate-900 dark:text-white">Trạng thái gói được cập nhật lại ngay trong client</p>
           </div>
         </div>
+
+        <div class="mt-8 space-y-3">
+          <div
+            v-for="(step, index) in paymentFlow"
+            :key="step.id"
+            class="panel-muted flex items-start gap-4 p-4"
+          >
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-sm font-black text-primary">
+              {{ index + 1 }}
+            </div>
+            <div>
+              <p class="text-sm font-black text-slate-900 dark:text-white">{{ step.title }}</p>
+              <p class="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{{ step.copy }}</p>
+            </div>
+          </div>
+        </div>
       </article>
 
       <article class="panel-surface p-6 sm:p-7">
@@ -352,6 +403,51 @@ async function processPayment() {
           <div class="status-card status-warning">
             <span class="material-symbols-outlined text-[18px]">payments</span>
             <span>Nếu giao dịch thất bại, không có thay đổi nào được áp dụng cho tài khoản.</span>
+          </div>
+        </div>
+
+        <div class="mt-8 space-y-3">
+          <article
+            v-for="method in paymentMethods"
+            :key="method.id"
+            class="panel-muted flex items-start gap-4 p-4"
+          >
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              :class="
+                method.accent === 'primary'
+                  ? 'bg-primary/12 text-primary'
+                  : method.accent === 'amber'
+                    ? 'bg-amber-500/12 text-amber-600 dark:text-amber-300'
+                    : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+              "
+            >
+              <span class="material-symbols-outlined text-[20px]">{{ method.icon }}</span>
+            </div>
+            <div>
+              <p class="text-sm font-black text-slate-900 dark:text-white">{{ method.title }}</p>
+              <p class="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{{ method.note }}</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="mt-8">
+          <p class="control-label">Giao dịch gần đây</p>
+          <div class="mt-3 space-y-3">
+            <article
+              v-for="item in paymentActivity"
+              :key="item.id"
+              class="panel-muted flex items-center justify-between gap-4 p-4"
+            >
+              <div>
+                <p class="text-sm font-black text-slate-900 dark:text-white">{{ item.customer }} nâng cấp {{ item.plan }}</p>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ item.cycle }} • {{ item.time }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-black text-slate-900 dark:text-white">{{ formatPrice(item.amount) }}</p>
+                <p class="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">{{ item.status }}</p>
+              </div>
+            </article>
           </div>
         </div>
       </article>
@@ -408,6 +504,25 @@ async function processPayment() {
             </div>
           </div>
 
+          <div class="mt-5 rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+            <p class="control-label">Receipt preview</p>
+            <div class="mt-3 space-y-3">
+              <div
+                v-for="row in checkoutReceipt"
+                :key="row.label"
+                class="flex items-center justify-between gap-4 text-sm"
+              >
+                <span class="text-slate-500 dark:text-slate-400">{{ row.label }}</span>
+                <span
+                  class="font-bold"
+                  :class="row.emphasis ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'"
+                >
+                  {{ formatReceiptValue(row) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div v-if="checkoutError" class="status-card status-error mt-5">
             <span class="material-symbols-outlined text-[18px]">error</span>
             <span>{{ checkoutError }}</span>
@@ -416,6 +531,16 @@ async function processPayment() {
           <div class="status-card status-info mt-5">
             <span class="material-symbols-outlined text-[18px]">shield</span>
             <span>Bạn sẽ được chuyển tới cổng VNPAY để hoàn tất giao dịch một cách bảo mật.</span>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-2">
+            <span
+              v-for="method in paymentMethods"
+              :key="`checkout-${method.id}`"
+              class="rounded-full bg-slate-100 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            >
+              {{ method.title }}
+            </span>
           </div>
 
           <form class="mt-6" @submit.prevent="processPayment">

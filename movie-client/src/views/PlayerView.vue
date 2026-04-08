@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 
+import { buildCommentShowcase, buildEpisodeShowcase } from '../data/showcase';
 import { getApiErrorMessage } from '../services/api';
 import { getMovieEpisodes, getMovieLanding } from '../services/discovery';
 import { upsertWatchlist } from '../services/watchlist';
@@ -18,6 +19,7 @@ const movieData = ref(null);
 const progress = ref(0);
 const statusMessage = ref('');
 const episodes = ref([]);
+const communityComments = ref({ items: [], total: 0 });
 const activeEpisodeId = ref('');
 const videoRef = ref(null);
 const activeServer = ref(1);
@@ -44,6 +46,10 @@ const activeEpisode = computed(() => {
   if (!activeEpisodeId.value) return null;
   return (episodes.value || []).find((episode) => String(episode?.id) === String(activeEpisodeId.value)) || null;
 });
+const episodeShowcase = computed(() => buildEpisodeShowcase(movieData.value, episodes.value));
+const displayedEpisodes = computed(() => episodeShowcase.value.items || []);
+const commentShowcase = computed(() => buildCommentShowcase(movieData.value, communityComments.value));
+const highlightComments = computed(() => (commentShowcase.value.items || []).slice(0, 2));
 
 const qualityLabel = computed(() => {
   const raw = String(movieData.value?.quality || '').trim();
@@ -116,6 +122,7 @@ async function loadMovieForPlayer() {
   try {
     const data = await getMovieLanding(slug.value);
     movieData.value = data.movie;
+    communityComments.value = data.comments || { items: [], total: 0 };
     progress.value = 0;
 
     const res = await getMovieEpisodes(slug.value, { limit: 500 });
@@ -163,6 +170,10 @@ async function saveProgress() {
 
 function openEpisode(episode) {
   if (!movieData.value) return;
+  if (episode?.preview) {
+    router.push({ name: 'player', params: { slug: movieData.value.slug } });
+    return;
+  }
   router.push({ name: 'player', params: { slug: movieData.value.slug }, query: { episodeId: episode.id } });
 }
 
@@ -316,21 +327,26 @@ onBeforeUnmount(() => {
           <article class="panel-surface p-6">
             <div class="section-head">
               <div>
-                <h2 class="section-title">{{ episodes.length ? 'Danh sách tập' : 'Cinema Mode' }}</h2>
+                <h2 class="section-title">{{ displayedEpisodes.length ? 'Danh sách tập' : 'Cinema Mode' }}</h2>
                 <p class="section-copy">
-                  {{ episodes.length ? 'Chọn tập muốn phát ngay trong panel bên phải.' : 'Phim lẻ đang phát trực tiếp với chế độ trình chiếu tập trung.' }}
+                  {{ displayedEpisodes.length ? 'Chọn tập muốn phát ngay trong panel bên phải.' : 'Phim lẻ đang phát trực tiếp với chế độ trình chiếu tập trung.' }}
                 </p>
               </div>
             </div>
 
-            <div v-if="episodes.length" class="mt-6 space-y-3">
+            <div v-if="episodeShowcase.isFallback" class="status-card status-info mt-6">
+              <span class="material-symbols-outlined text-[18px]">preview</span>
+              <span>{{ episodeShowcase.description }}</span>
+            </div>
+
+            <div v-if="displayedEpisodes.length" class="mt-6 space-y-3">
               <button
-                v-for="episode in episodes"
+                v-for="episode in displayedEpisodes"
                 :key="episode.id"
                 type="button"
                 class="flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-4 text-left transition-colors"
                 :class="
-                  String(episode.id) === String(activeEpisodeId)
+                  !episode.preview && String(episode.id) === String(activeEpisodeId)
                     ? 'border-primary/35 bg-primary/8'
                     : 'border-slate-200 bg-slate-50 hover:border-primary/25 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-900'
                 "
@@ -341,14 +357,28 @@ onBeforeUnmount(() => {
                     Tập {{ String(episode.epNo).padStart(2, '0') }}: {{ episode.title || `Episode ${episode.epNo}` }}
                   </p>
                   <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {{ episode.durationSeconds ? `${Math.round(episode.durationSeconds / 60)} phút` : 'Video stream' }}
+                    {{ episode.durationMinutes ? `${episode.durationMinutes} phút` : 'Video stream' }}
                   </p>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    <span class="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      {{ episode.streamLabel }}
+                    </span>
+                    <span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                      {{ episode.availability }}
+                    </span>
+                  </div>
                 </div>
                 <span
                   class="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em]"
-                  :class="String(episode.id) === String(activeEpisodeId) ? 'bg-primary text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
+                  :class="
+                    !episode.preview && String(episode.id) === String(activeEpisodeId)
+                      ? 'bg-primary text-white'
+                      : episode.preview
+                        ? 'bg-amber-500/12 text-amber-700 dark:text-amber-300'
+                        : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                  "
                 >
-                  {{ String(episode.id) === String(activeEpisodeId) ? 'Đang phát' : 'Chọn' }}
+                  {{ !episode.preview && String(episode.id) === String(activeEpisodeId) ? 'Đang phát' : episode.preview ? 'Preview' : 'Chọn' }}
                 </span>
               </button>
             </div>
@@ -381,6 +411,41 @@ onBeforeUnmount(() => {
                 <span class="material-symbols-outlined text-[18px]">workspace_premium</span>
                 Nâng cấp để mở thêm nội dung VIP
               </RouterLink>
+            </div>
+          </article>
+
+          <article class="panel-surface p-6">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">Nhịp cộng đồng</h2>
+                <p class="section-copy">Lấy từ bình luận thật nếu có, nếu chưa có sẽ hiển thị preview để panel không bị trống.</p>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-2">
+              <span
+                v-for="chip in commentShowcase.chips"
+                :key="chip"
+                class="rounded-full bg-slate-100 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              >
+                {{ chip }}
+              </span>
+            </div>
+
+            <div class="mt-6 space-y-3">
+              <article
+                v-for="comment in highlightComments"
+                :key="comment.id"
+                class="panel-muted p-4"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-black text-slate-900 dark:text-white">{{ comment.user?.name || 'Viewer' }}</p>
+                  <span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                    {{ comment.badge || 'Community' }}
+                  </span>
+                </div>
+                <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{{ comment.content }}</p>
+              </article>
             </div>
           </article>
         </div>

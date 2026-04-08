@@ -23,8 +23,8 @@ const settingsStore = useSettingsStore();
       <main class="flex-1">
         <div
           :class="settingsStore.layout === 'top'
-            ? 'mx-auto w-full max-w-[1440px] px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pt-10'
-            : 'w-full px-6 pb-16 pt-8 md:px-8 xl:px-10'"
+            ? 'mx-auto w-full max-w-[1240px] px-4 pb-12 pt-4 sm:px-5 lg:px-6 lg:pt-5'
+            : 'w-full px-4 pb-12 pt-4 md:px-5 xl:px-6'"
         >
           <RouterView />
         </div>

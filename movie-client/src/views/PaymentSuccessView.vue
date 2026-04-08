@@ -1,5 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+
+import { getPaymentFlow } from '../data/showcase';
 import { useAuthStore } from '../stores/auth';
 
 const authStore = useAuthStore();
@@ -10,6 +12,12 @@ const currentPlanLabel = computed(() => {
   const plan = String(authStore.user?.plan || 'vip');
   return plan.toUpperCase();
 });
+const paymentFlow = computed(() => getPaymentFlow());
+const successFacts = computed(() => [
+  { label: 'Plan', value: currentPlanLabel.value },
+  { label: 'Gateway', value: 'VNPAY' },
+  { label: 'Status', value: loading.value ? 'Syncing' : 'Confirmed' }
+]);
 
 onMounted(async () => {
   if (!authStore.token) return;
@@ -48,9 +56,36 @@ onMounted(async () => {
             <span>{{ refreshError }}</span>
           </div>
 
+          <div class="grid gap-4 sm:grid-cols-3">
+            <article
+              v-for="fact in successFacts"
+              :key="fact.label"
+              class="panel-muted p-4"
+            >
+              <p class="control-label">{{ fact.label }}</p>
+              <p class="text-base font-black text-slate-900 dark:text-white">{{ fact.value }}</p>
+            </article>
+          </div>
+
           <div class="flex flex-col gap-3 sm:flex-row">
             <RouterLink to="/profile" class="action-primary">Open Profile</RouterLink>
             <RouterLink to="/pricing" class="action-secondary">Back to Pricing</RouterLink>
+          </div>
+
+          <div class="space-y-3">
+            <article
+              v-for="(step, index) in paymentFlow"
+              :key="step.id"
+              class="panel-muted flex items-start gap-4 p-4"
+            >
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 font-black text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                {{ index + 1 }}
+              </div>
+              <div>
+                <p class="text-sm font-black text-slate-900 dark:text-white">{{ step.title }}</p>
+                <p class="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{{ step.copy }}</p>
+              </div>
+            </article>
           </div>
         </div>
 

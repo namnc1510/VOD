@@ -7,9 +7,11 @@ const Comment = require('../src/models/comment.model');
 const Country = require('../src/models/country.model');
 const Format = require('../src/models/format.model');
 const Movie = require('../src/models/movie.model');
+const Person = require('../src/models/person.model');
 const Quality = require('../src/models/quality.model');
 const rolePermissionService = require('../src/services/role-permission.service');
 const Setting = require('../src/models/setting.model');
+const Transaction = require('../src/models/transaction.model');
 const User = require('../src/models/user.model');
 const Watchlist = require('../src/models/watchlist.model');
 const slugify = require('../src/utils/slug');
@@ -19,6 +21,371 @@ const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@streamvue.local';
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Admin@123456';
 const DEMO_EMAIL = process.env.SEED_DEMO_EMAIL || 'demo@streamvue.local';
 const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD || 'Demo@123456';
+
+const SUBSCRIPTION_PLANS = {
+  standard: { monthly: 49000, annual: 470000 },
+  premium: { monthly: 89000, annual: 850000 },
+  ultimate: { monthly: 149000, annual: 1430000 }
+};
+
+const PAYMENT_METHODS = ['seed_vnpay', 'seed_momo', 'seed_card'];
+const VIEWER_FIRST_NAMES = [
+  'Noah',
+  'Olivia',
+  'Ethan',
+  'Sophia',
+  'Liam',
+  'Mia',
+  'Lucas',
+  'Ava',
+  'Mason',
+  'Chloe',
+  'James',
+  'Grace',
+  'Elijah',
+  'Nora',
+  'Henry',
+  'Ella'
+];
+const VIEWER_LAST_NAMES = [
+  'Bennett',
+  'Nguyen',
+  'Turner',
+  'Tran',
+  'Walker',
+  'Le',
+  'Morgan',
+  'Pham',
+  'Carter',
+  'Hoang',
+  'Mitchell',
+  'Vo',
+  'Brooks',
+  'Dang',
+  'Russell',
+  'Bui'
+];
+
+const FALLBACK_GENRE_POOL = [
+  'Action',
+  'Adventure',
+  'Drama',
+  'Thriller',
+  'Sci-Fi',
+  'Mystery',
+  'Crime',
+  'Fantasy',
+  'Comedy',
+  'Animation',
+  'Family',
+  'Romance'
+];
+
+const FALLBACK_COUNTRY_POOL = [
+  'United States',
+  'United Kingdom',
+  'Canada',
+  'Japan',
+  'South Korea',
+  'France',
+  'Germany',
+  'Australia'
+];
+
+const FALLBACK_ACTOR_POOL = [
+  'Leonardo DiCaprio',
+  'Scarlett Johansson',
+  'Robert Downey Jr.',
+  'Tom Hanks',
+  'Meryl Streep',
+  'Denzel Washington',
+  'Brie Larson',
+  'Kang-ho Song',
+  'Zendaya',
+  'Ryan Reynolds',
+  'Florence Pugh',
+  'Timothee Chalamet',
+  'Ana de Armas',
+  'John Boyega',
+  'Oscar Isaac',
+  'Margot Robbie',
+  'Emily Blunt',
+  'Dev Patel',
+  'Lupita Nyong\'o',
+  'Pedro Pascal',
+  'Saoirse Ronan',
+  'Daniel Kaluuya',
+  'Jessica Chastain',
+  'Tom Holland'
+];
+
+const FALLBACK_DIRECTOR_POOL = [
+  'Christopher Nolan',
+  'Steven Spielberg',
+  'Martin Scorsese',
+  'Quentin Tarantino',
+  'Greta Gerwig',
+  'Bong Joon-ho',
+  'Denis Villeneuve',
+  'Patty Jenkins',
+  'Damien Chazelle',
+  'Jordan Peele',
+  'Ryan Coogler',
+  'Sofia Coppola'
+];
+
+const PROFILE_GENDERS = ['Male', 'Female', 'Non-binary'];
+const PROFILE_NATIONALITIES = [
+  'American',
+  'British',
+  'Canadian',
+  'Australian',
+  'French',
+  'South Korean',
+  'Japanese',
+  'German'
+];
+const PROFILE_CITIES = [
+  'Los Angeles',
+  'New York',
+  'London',
+  'Toronto',
+  'Sydney',
+  'Paris',
+  'Seoul',
+  'Tokyo',
+  'Berlin',
+  'Vancouver'
+];
+
+function hashString(input) {
+  let hash = 0;
+  const source = String(input || '');
+
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
+function uniqueStrings(values) {
+  const input = Array.isArray(values)
+    ? values
+    : values !== undefined && values !== null
+      ? [values]
+      : [];
+  const seen = new Set();
+  const result = [];
+
+  for (const item of input) {
+    const segments = typeof item === 'string' ? item.split(',') : [item];
+    for (const segment of segments) {
+      const value = String(segment || '').trim();
+      if (!value) continue;
+
+      const key = value.toLowerCase();
+      if (seen.has(key)) continue;
+
+      seen.add(key);
+      result.push(value);
+    }
+  }
+
+  return result;
+}
+
+function pickSeedItems(pool, count, seed) {
+  if (!Array.isArray(pool) || pool.length === 0 || count <= 0) return [];
+
+  const size = Math.min(count, pool.length);
+  const result = [];
+  const seen = new Set();
+  let index = hashString(seed) % pool.length;
+  const step = pool.length > 1 ? (hashString(`${seed}-step`) % (pool.length - 1)) + 1 : 1;
+
+  while (result.length < size) {
+    const candidate = pool[index % pool.length];
+    if (!seen.has(candidate)) {
+      seen.add(candidate);
+      result.push(candidate);
+    }
+    index += step;
+  }
+
+  return result;
+}
+
+function pickSeedEntries(pool, count, seed) {
+  if (!Array.isArray(pool) || pool.length === 0 || count <= 0) return [];
+
+  const size = Math.min(count, pool.length);
+  const result = [];
+  const seen = new Set();
+  let index = hashString(seed) % pool.length;
+  const step = pool.length > 1 ? (hashString(`${seed}-step`) % (pool.length - 1)) + 1 : 1;
+
+  while (result.length < size) {
+    const slot = index % pool.length;
+    if (!seen.has(slot)) {
+      seen.add(slot);
+      result.push(pool[slot]);
+    }
+    index += step;
+  }
+
+  return result;
+}
+
+function seededNumber(seed, min, max) {
+  if (max <= min) return min;
+  return min + (hashString(seed) % (max - min + 1));
+}
+
+function seededChoice(pool, seed) {
+  if (!Array.isArray(pool) || pool.length === 0) return undefined;
+  return pool[hashString(seed) % pool.length];
+}
+
+function shiftDate(date, { days = 0, months = 0, years = 0 } = {}) {
+  const next = new Date(date);
+  if (years) next.setFullYear(next.getFullYear() + years);
+  if (months) next.setMonth(next.getMonth() + months);
+  if (days) next.setDate(next.getDate() + days);
+  return next;
+}
+
+function seededDateDaysAgo(seed, minDaysAgo, maxDaysAgo) {
+  const daysAgo = seededNumber(`${seed}-days`, minDaysAgo, maxDaysAgo);
+  const hours = seededNumber(`${seed}-hours`, 8, 23);
+  const minutes = seededNumber(`${seed}-minutes`, 0, 59);
+  const createdAt = new Date();
+
+  createdAt.setDate(createdAt.getDate() - daysAgo);
+  createdAt.setHours(hours, minutes, 0, 0);
+
+  return createdAt;
+}
+
+function buildMovieSeedCredits(data, slug) {
+  const genres = uniqueStrings(
+    data.genres && data.genres.length
+      ? data.genres
+      : pickSeedItems(FALLBACK_GENRE_POOL, String(data.type || 'movie').toLowerCase() === 'series' ? 3 : 2, `${slug}-genres`)
+  );
+  const countries = uniqueStrings(
+    data.countries && data.countries.length
+      ? data.countries
+      : pickSeedItems(FALLBACK_COUNTRY_POOL, 1, `${slug}-countries`)
+  );
+  const directors = uniqueStrings(
+    data.director
+      ? data.director
+      : pickSeedItems(FALLBACK_DIRECTOR_POOL, 1, `${slug}-director`)
+  );
+  const cast = uniqueStrings(
+    data.cast && data.cast.length
+      ? data.cast
+      : pickSeedItems(FALLBACK_ACTOR_POOL, 3, `${slug}-cast`)
+  );
+  const writers = uniqueStrings(
+    data.writers && data.writers.length
+      ? data.writers
+      : directors.slice(0, 1)
+  );
+
+  return {
+    genres,
+    countries,
+    director: directors.join(', '),
+    cast,
+    writers
+  };
+}
+
+function buildPersonProfile(name, role) {
+  const slug = toSlug(name);
+  const seed = hashString(`${slug}-${role}`);
+  const nationality = PROFILE_NATIONALITIES[seed % PROFILE_NATIONALITIES.length];
+  const city = PROFILE_CITIES[hashString(`${slug}-city`) % PROFILE_CITIES.length];
+  const roleLabel = role === 'directing' ? 'director' : 'actor';
+
+  return {
+    name,
+    slug,
+    avatarUrl: `https://i.pravatar.cc/300?u=${encodeURIComponent(slug)}`,
+    biography: `${name} is a ${nationality.toLowerCase()} ${roleLabel} featured in the StreamVue preview catalog.`,
+    placeOfBirth: `${city}, ${nationality}`,
+    nationality,
+    gender: PROFILE_GENDERS[seed % PROFILE_GENDERS.length],
+    views: 100 + (seed % 5000),
+    knownFor: [role]
+  };
+}
+
+function collectPersonSeeds(movies) {
+  const people = new Map();
+
+  const addPerson = (name, role) => {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) return;
+
+    const slug = toSlug(trimmed);
+    if (!slug) return;
+
+    if (!people.has(slug)) {
+      people.set(slug, buildPersonProfile(trimmed, role));
+      return;
+    }
+
+    const existing = people.get(slug);
+    existing.knownFor = uniqueStrings([...(existing.knownFor || []), role]);
+  };
+
+  for (const movie of movies) {
+    uniqueStrings(movie.cast).forEach((name) => addPerson(name, 'acting'));
+    uniqueStrings(movie.director).forEach((name) => addPerson(name, 'directing'));
+  }
+
+  return people;
+}
+
+async function seedPersonsFromMovies(movies) {
+  const personSeeds = collectPersonSeeds(movies);
+  if (personSeeds.size === 0) return new Map();
+
+  await Person.bulkWrite(
+    Array.from(personSeeds.values()).map((person) => ({
+      updateOne: {
+        filter: { slug: person.slug },
+        update: {
+          $set: {
+            name: person.name,
+            slug: person.slug
+          },
+          $setOnInsert: {
+            avatarUrl: person.avatarUrl,
+            biography: person.biography,
+            placeOfBirth: person.placeOfBirth,
+            nationality: person.nationality,
+            gender: person.gender,
+            views: person.views
+          },
+          $addToSet: {
+            knownFor: { $each: person.knownFor }
+          }
+        },
+        upsert: true
+      }
+    }))
+  );
+
+  const persons = await Person.find({ slug: { $in: Array.from(personSeeds.keys()) } })
+    .select('_id slug name')
+    .lean();
+
+  return new Map(persons.map((person) => [person.slug, person]));
+}
 
 function makePoster(slug) {
   return `https://picsum.photos/seed/${slug}-poster/600/900`;
@@ -34,8 +401,7 @@ function toSlug(title) {
 
 function createMovieSeed(data) {
   const slug = toSlug(data.title);
-  const genres = data.genres || [];
-  const countries = data.countries || [];
+  const normalizedCredits = buildMovieSeedCredits(data, slug);
   const releaseDate = data.releaseDate ? new Date(data.releaseDate) : undefined;
 
   const fallbackTrailer = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} trailer`)}`;
@@ -46,8 +412,8 @@ function createMovieSeed(data) {
     title: data.title,
     type: data.type || 'movie',
     overview: data.overview,
-    genres,
-    countries,
+    genres: normalizedCredits.genres,
+    countries: normalizedCredits.countries,
     releaseYear: data.releaseYear,
     releaseDate,
     rating: data.imdbRating,
@@ -60,9 +426,9 @@ function createMovieSeed(data) {
     backdropUrl: data.backdropUrl || makeBackdrop(slug),
     trailerUrl: data.trailerUrl || fallbackTrailer,
     streamUrl: data.streamUrl || fallbackStream,
-    director: data.director || '',
-    writers: data.writers || [],
-    cast: data.cast || [],
+    director: normalizedCredits.director,
+    writers: normalizedCredits.writers,
+    cast: normalizedCredits.cast,
     tags: data.tags || [],
     status: data.status || 'released',
     isFeatured: Boolean(data.isFeatured),
@@ -1185,14 +1551,109 @@ const commentMessages = [
   'Production quality is top tier from start to finish.'
 ];
 
-function pickRandom(list) {
-  return list[Math.floor(Math.random() * list.length)];
+const commentFollowUps = [
+  'Worth keeping on your watchlist rotation.',
+  'Subtitle timing was clean and easy to follow.',
+  'The cinematography really carried the atmosphere.',
+  'I would watch a sequel or spin-off without hesitation.',
+  'This played much better than I expected on a late-night binge.',
+  'The mix of action beats and quiet scenes felt balanced.'
+];
+
+function buildMovieMetrics(movie) {
+  const baseViews = Number(movie.views) || 0;
+  const ratingBoost = Math.round((Number(movie.imdbRating) || 0) * 90000);
+  const releaseBoost = movie.releaseYear ? Math.max(Number(movie.releaseYear) - 2018, 0) * 55000 : 0;
+  const seededBoost = seededNumber(`${movie.slug}-views`, 120000, 780000);
+  const views = Math.max(baseViews, 180000 + ratingBoost + releaseBoost + seededBoost);
+  const trendingScore = Math.min(
+    99,
+    Math.max(Number(movie.trendingScore) || 0, seededNumber(`${movie.slug}-trend`, 38, 96))
+  );
+
+  return {
+    views,
+    trendingScore,
+    isTrending: Boolean(movie.isTrending) || views >= 950000 || trendingScore >= 72,
+    isFeatured: Boolean(movie.isFeatured) || views >= 1700000 || (Number(movie.imdbRating) || 0) >= 8.8,
+    isNewRelease: Boolean(movie.isNewRelease) || Number(movie.releaseYear) >= new Date().getFullYear() - 2
+  };
+}
+
+function buildSubscriptionSnapshot(plan, seed, preferredCycle) {
+  if (plan === 'free') {
+    return {
+      planStartedAt: null,
+      planExpiresAt: null
+    };
+  }
+
+  const billingCycle = preferredCycle || seededChoice(['monthly', 'monthly', 'annual'], `${seed}-cycle`);
+  const planStartedAt = seededDateDaysAgo(
+    `${seed}-plan-start`,
+    3,
+    billingCycle === 'annual' ? 180 : 26
+  );
+
+  return {
+    planStartedAt,
+    planExpiresAt: shiftDate(planStartedAt, billingCycle === 'annual' ? { years: 1 } : { months: 1 })
+  };
+}
+
+function buildGeneratedUserSeeds(passwordHash) {
+  const plans = ['free', 'standard', 'premium', 'standard', 'premium', 'ultimate'];
+
+  return VIEWER_FIRST_NAMES.map((firstName, index) => {
+    const lastName = VIEWER_LAST_NAMES[index % VIEWER_LAST_NAMES.length];
+    const name = `${firstName} ${lastName}`;
+    const slug = toSlug(name);
+    const plan = plans[index % plans.length];
+    const createdAt = seededDateDaysAgo(`${slug}-joined`, 20, 420);
+    const subscription = buildSubscriptionSnapshot(plan, slug);
+
+    return {
+      name,
+      email: `${slug}@streamvue.local`,
+      role: 'user',
+      plan,
+      avatarUrl: `https://picsum.photos/seed/${slug}/200/200`,
+      passwordHash,
+      watchedCount: seededNumber(`${slug}-watched`, 18, 240),
+      createdAt,
+      planStartedAt: subscription.planStartedAt,
+      planExpiresAt: subscription.planExpiresAt
+    };
+  });
+}
+
+function buildCommentContent(seed, movieTitle, status) {
+  if (status === 'spam') {
+    return `Please reupload ${movieTitle} with another mirror source.`;
+  }
+
+  const opening = seededChoice(commentMessages, `${seed}-opening`) || commentMessages[0];
+  const closing = seededChoice(commentFollowUps, `${seed}-closing`) || commentFollowUps[0];
+  return `${opening} ${closing}`;
+}
+
+function getPlanAmount(plan, billingCycle) {
+  return SUBSCRIPTION_PLANS?.[plan]?.[billingCycle] || 0;
 }
 
 async function seedUsers() {
   const hashedAdminPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
   const hashedDemoPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
   const hashedCommonPassword = await bcrypt.hash('User@123456', 10);
+
+  const adminSubscription = buildSubscriptionSnapshot('premium', 'stream-admin', 'annual');
+  const superSubscription = buildSubscriptionSnapshot('ultimate', 'system-super', 'annual');
+  const editorSubscription = buildSubscriptionSnapshot('ultimate', 'content-editor', 'annual');
+  const moderatorSubscription = buildSubscriptionSnapshot('premium', 'community-mod', 'monthly');
+  const demoSubscription = buildSubscriptionSnapshot('premium', 'alex-johnson', 'monthly');
+  const sarahSubscription = buildSubscriptionSnapshot('premium', 'sarah-jenkins', 'monthly');
+  const linaSubscription = buildSubscriptionSnapshot('premium', 'lina-park', 'annual');
+  const emmaSubscription = buildSubscriptionSnapshot('premium', 'emma-watson', 'monthly');
 
   const userSeeds = [
     {
@@ -1202,7 +1663,10 @@ async function seedUsers() {
       plan: 'premium',
       avatarUrl: 'https://picsum.photos/seed/stream-admin/200/200',
       passwordHash: hashedAdminPassword,
-      watchedCount: 320
+      watchedCount: 320,
+      createdAt: seededDateDaysAgo('stream-admin-joined', 180, 520),
+      planStartedAt: adminSubscription.planStartedAt,
+      planExpiresAt: adminSubscription.planExpiresAt
     },
     {
       name: 'System Super',
@@ -1211,7 +1675,10 @@ async function seedUsers() {
       plan: 'ultimate',
       avatarUrl: 'https://picsum.photos/seed/system-super/200/200',
       passwordHash: hashedAdminPassword,
-      watchedCount: 999
+      watchedCount: 999,
+      createdAt: seededDateDaysAgo('system-super-joined', 250, 620),
+      planStartedAt: superSubscription.planStartedAt,
+      planExpiresAt: superSubscription.planExpiresAt
     },
     {
       name: 'Content Editor',
@@ -1220,7 +1687,10 @@ async function seedUsers() {
       plan: 'ultimate',
       avatarUrl: 'https://picsum.photos/seed/content-editor/200/200',
       passwordHash: hashedAdminPassword,
-      watchedCount: 156
+      watchedCount: 156,
+      createdAt: seededDateDaysAgo('content-editor-joined', 150, 420),
+      planStartedAt: editorSubscription.planStartedAt,
+      planExpiresAt: editorSubscription.planExpiresAt
     },
     {
       name: 'Community Mod',
@@ -1229,7 +1699,10 @@ async function seedUsers() {
       plan: 'premium',
       avatarUrl: 'https://picsum.photos/seed/community-mod/200/200',
       passwordHash: hashedAdminPassword,
-      watchedCount: 88
+      watchedCount: 88,
+      createdAt: seededDateDaysAgo('community-mod-joined', 120, 320),
+      planStartedAt: moderatorSubscription.planStartedAt,
+      planExpiresAt: moderatorSubscription.planExpiresAt
     },
     {
       name: 'Alex Johnson',
@@ -1238,7 +1711,10 @@ async function seedUsers() {
       plan: 'premium',
       avatarUrl: 'https://picsum.photos/seed/alex-johnson/200/200',
       passwordHash: hashedDemoPassword,
-      watchedCount: 128
+      watchedCount: 128,
+      createdAt: seededDateDaysAgo('alex-johnson-joined', 45, 280),
+      planStartedAt: demoSubscription.planStartedAt,
+      planExpiresAt: demoSubscription.planExpiresAt
     },
     {
       name: 'Sarah Jenkins',
@@ -1247,7 +1723,10 @@ async function seedUsers() {
       plan: 'premium',
       avatarUrl: 'https://picsum.photos/seed/sarah-jenkins/200/200',
       passwordHash: hashedCommonPassword,
-      watchedCount: 94
+      watchedCount: 94,
+      createdAt: seededDateDaysAgo('sarah-jenkins-joined', 60, 300),
+      planStartedAt: sarahSubscription.planStartedAt,
+      planExpiresAt: sarahSubscription.planExpiresAt
     },
     {
       name: 'Michael Rivera',
@@ -1256,7 +1735,10 @@ async function seedUsers() {
       plan: 'free',
       avatarUrl: 'https://picsum.photos/seed/michael-rivera/200/200',
       passwordHash: hashedCommonPassword,
-      watchedCount: 73
+      watchedCount: 73,
+      createdAt: seededDateDaysAgo('michael-rivera-joined', 75, 320),
+      planStartedAt: null,
+      planExpiresAt: null
     },
     {
       name: 'Lina Park',
@@ -1265,7 +1747,10 @@ async function seedUsers() {
       plan: 'premium',
       avatarUrl: 'https://picsum.photos/seed/lina-park/200/200',
       passwordHash: hashedCommonPassword,
-      watchedCount: 101
+      watchedCount: 101,
+      createdAt: seededDateDaysAgo('lina-park-joined', 35, 260),
+      planStartedAt: linaSubscription.planStartedAt,
+      planExpiresAt: linaSubscription.planExpiresAt
     },
     {
       name: 'Daniel Kim',
@@ -1274,7 +1759,10 @@ async function seedUsers() {
       plan: 'free',
       avatarUrl: 'https://picsum.photos/seed/daniel-kim/200/200',
       passwordHash: hashedCommonPassword,
-      watchedCount: 44
+      watchedCount: 44,
+      createdAt: seededDateDaysAgo('daniel-kim-joined', 55, 240),
+      planStartedAt: null,
+      planExpiresAt: null
     },
     {
       name: 'Emma Watson',
@@ -1283,26 +1771,37 @@ async function seedUsers() {
       plan: 'premium',
       avatarUrl: 'https://picsum.photos/seed/emma-watson/200/200',
       passwordHash: hashedCommonPassword,
-      watchedCount: 87
-    }
+      watchedCount: 87,
+      createdAt: seededDateDaysAgo('emma-watson-joined', 25, 220),
+      planStartedAt: emmaSubscription.planStartedAt,
+      planExpiresAt: emmaSubscription.planExpiresAt
+    },
+    ...buildGeneratedUserSeeds(hashedCommonPassword)
   ];
 
-  for (const user of userSeeds) {
-    await User.updateOne(
-      { email: user.email },
-      {
-        $set: {
-          name: user.name,
-          role: user.role,
-          plan: user.plan,
-          avatarUrl: user.avatarUrl,
-          watchedCount: user.watchedCount,
-          passwordHash: user.passwordHash
-        }
-      },
-      { upsert: true }
-    );
-  }
+  await User.bulkWrite(
+    userSeeds.map((user) => ({
+      updateOne: {
+        filter: { email: user.email },
+        update: {
+          $set: {
+            name: user.name,
+            role: user.role,
+            plan: user.plan,
+            avatarUrl: user.avatarUrl,
+            watchedCount: user.watchedCount,
+            passwordHash: user.passwordHash,
+            planStartedAt: user.planStartedAt,
+            planExpiresAt: user.planExpiresAt
+          },
+          $setOnInsert: {
+            createdAt: user.createdAt
+          }
+        },
+        upsert: true
+      }
+    }))
+  );
 
   const users = await User.find({ email: { $in: userSeeds.map((item) => item.email) } }).lean();
   const usersByEmail = new Map(users.map((user) => [user.email, user]));
@@ -1311,7 +1810,7 @@ async function seedUsers() {
     users,
     adminUser: usersByEmail.get(ADMIN_EMAIL),
     demoUser: usersByEmail.get(DEMO_EMAIL),
-    commentUsers: users.filter((user) => user.role === 'user')
+    memberUsers: users.filter((user) => user.role === 'user')
   };
 }
 
@@ -1366,11 +1865,25 @@ async function seedMovies() {
 
   const formats = await Format.find().lean();
   const formatMap = new Map(formats.map((f) => [String(f.slug).toLowerCase(), f]));
+  const personMap = await seedPersonsFromMovies(movieSeeds);
 
   for (const movie of movieSeeds) {
     const movieData = { ...movie };
+    const metrics = buildMovieMetrics(movieData);
+
+    movieData.views = metrics.views;
+    movieData.trendingScore = metrics.trendingScore;
+    movieData.isTrending = metrics.isTrending;
+    movieData.isFeatured = metrics.isFeatured;
+    movieData.isNewRelease = metrics.isNewRelease;
     movieData.genres = (movieData.genres || []).map(g => catMap.get(g)).filter(Boolean);
     movieData.countries = (movieData.countries || []).map(c => couMap.get(c)).filter(Boolean);
+    movieData.actors = uniqueStrings(movieData.cast)
+      .map((name) => personMap.get(toSlug(name))?._id)
+      .filter(Boolean);
+    movieData.directors = uniqueStrings(movieData.director)
+      .map((name) => personMap.get(toSlug(name))?._id)
+      .filter(Boolean);
 
     const q = qualityMap.get(String(movieData.quality || 'HD').toLowerCase());
     if (q?._id) {
@@ -1393,77 +1906,266 @@ async function seedMovies() {
 }
 
 async function seedComments(movies, users) {
-  const commentDocs = [];
+  if (!Array.isArray(movies) || movies.length === 0 || !Array.isArray(users) || users.length === 0) return;
 
-  const targetMovies = movies
-    .sort((a, b) => b.imdbRating - a.imdbRating)
-    .slice(0, 12);
+  const commentOps = [];
+  const targetMovies = [...movies]
+    .sort((a, b) => (b.views || 0) - (a.views || 0))
+    .slice(0, Math.min(movies.length, 28));
 
   for (const movie of targetMovies) {
-    const commentCount = 2 + Math.floor(Math.random() * 4);
-    for (let index = 0; index < commentCount; index += 1) {
-      const user = pickRandom(users);
-      commentDocs.push({
-        movie: movie._id,
-        user: user._id,
-        content: pickRandom(commentMessages),
-        status: 'approved',
-        hidden: false,
-        deletedAt: null,
-        likesCount: 5 + Math.floor(Math.random() * 120),
-        createdAt: new Date(Date.now() - Math.floor(Math.random() * 10 * 24 * 60 * 60 * 1000)),
-        updatedAt: new Date()
-      });
-    }
-  }
+    const commentCount = seededNumber(`${movie.slug}-comment-count`, 4, 8);
+    const commenters = pickSeedEntries(users, Math.min(commentCount, users.length), `${movie.slug}-commenters`);
 
-  if (commentDocs.length > 0) {
-    await Comment.insertMany(commentDocs);
-  }
-}
+    commenters.forEach((user, index) => {
+      const statusRoll = seededNumber(`${movie.slug}-${user.email || user._id}-status-${index}`, 1, 100);
+      const status = index < 2 ? 'approved' : statusRoll <= 74 ? 'approved' : statusRoll <= 93 ? 'pending' : 'spam';
+      const hidden = status === 'spam' || statusRoll >= 98;
+      const createdAt = seededDateDaysAgo(`${movie.slug}-${user.email || user._id}-comment-${index}`, 1, 120);
+      const deletedAt =
+        status === 'spam' && statusRoll >= 99
+          ? shiftDate(createdAt, { days: seededNumber(`${movie.slug}-${user._id}-deleted-${index}`, 1, 7) })
+          : null;
+      const content = buildCommentContent(`${movie.slug}-${user.email || user._id}-${index}`, movie.title, status);
 
-async function seedWatchlists(movies, demoUser, users) {
-  const watchlistOps = [];
-  const pool = movies.sort((a, b) => b.imdbRating - a.imdbRating);
-  const deviceTypes = ['desktop', 'mobile', 'tv', 'unknown'];
-
-  const demoMovies = pool.slice(0, 12);
-  for (const movie of demoMovies) {
-      watchlistOps.push({
+      commentOps.push({
         updateOne: {
-          filter: { user: demoUser._id, movie: movie._id },
+          filter: {
+            movie: movie._id,
+            user: user._id,
+            content
+          },
           update: {
             $set: {
-              progressSeconds: 300 + Math.floor(Math.random() * 7200),
-              isCompleted: Math.random() > 0.7,
-              deviceType: pickRandom(deviceTypes),
-              lastWatchedAt: new Date(Date.now() - Math.floor(Math.random() * 14 * 24 * 60 * 60 * 1000))
+              status,
+              hidden,
+              deletedAt,
+              likesCount: status === 'approved'
+                ? seededNumber(`${movie.slug}-${user._id}-likes-${index}`, 6, 160)
+                : seededNumber(`${movie.slug}-${user._id}-likes-${index}`, 0, 14),
+              updatedAt: shiftDate(createdAt, { days: seededNumber(`${movie.slug}-${user._id}-updated-${index}`, 0, 6) })
+            },
+            $setOnInsert: {
+              movie: movie._id,
+              user: user._id,
+              content,
+              createdAt
             }
           },
           upsert: true
         }
       });
+    });
   }
 
+  if (commentOps.length > 0) {
+    await Comment.bulkWrite(commentOps);
+  }
+}
+
+async function syncUserPlansFromTransactions(users) {
+  if (!Array.isArray(users) || users.length === 0) return;
+
+  const userIds = users.map((user) => user._id);
+  const latestCompletedTransactions = await Transaction.aggregate([
+    {
+      $match: {
+        user: { $in: userIds },
+        status: 'completed'
+      }
+    },
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: '$user',
+        transaction: { $first: '$$ROOT' }
+      }
+    }
+  ]);
+
+  const transactionByUserId = new Map(
+    latestCompletedTransactions.map((item) => [String(item._id), item.transaction])
+  );
+
+  await User.bulkWrite(
+    users.map((user) => {
+      const transaction = transactionByUserId.get(String(user._id));
+      if (!transaction) {
+        return {
+          updateOne: {
+            filter: { _id: user._id },
+            update: {
+              $set: {
+                plan: 'free',
+                planStartedAt: null,
+                planExpiresAt: null
+              }
+            }
+          }
+        };
+      }
+
+      const planStartedAt = new Date(transaction.createdAt);
+      const planExpiresAt = shiftDate(
+        planStartedAt,
+        transaction.billingCycle === 'annual' ? { years: 1 } : { months: 1 }
+      );
+
+      return {
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: {
+              plan: transaction.planPurchased,
+              planStartedAt,
+              planExpiresAt
+            }
+          }
+        }
+      };
+    })
+  );
+}
+
+async function seedTransactions(users) {
+  if (!Array.isArray(users) || users.length === 0) return;
+
+  await Transaction.deleteMany({
+    paymentMethod: { $regex: '^seed_' }
+  });
+
+  const transactions = [];
+  const paidPlans = Object.keys(SUBSCRIPTION_PLANS);
+
   for (const user of users) {
-    const randomCount = 2 + Math.floor(Math.random() * 4);
-    for (let index = 0; index < randomCount; index += 1) {
-      const movie = pickRandom(pool);
+    const userSeed = user.email || String(user._id);
+    const preferredPlan = paidPlans.includes(user.plan) ? user.plan : null;
+
+    if (preferredPlan) {
+      const completedCount = seededNumber(`${userSeed}-completed-count`, 1, 3);
+
+      for (let index = 0; index < completedCount; index += 1) {
+        const isLatest = index === completedCount - 1;
+        const planPurchased = isLatest
+          ? preferredPlan
+          : seededChoice(paidPlans, `${userSeed}-history-plan-${index}`);
+        const billingCycle = isLatest
+          ? seededChoice(['monthly', 'monthly', 'annual'], `${userSeed}-current-cycle`)
+          : seededChoice(['monthly', 'annual'], `${userSeed}-history-cycle-${index}`);
+        const createdAt = seededDateDaysAgo(
+          `${userSeed}-completed-${index}`,
+          isLatest ? 3 : 55 + index * 55,
+          isLatest ? (billingCycle === 'annual' ? 220 : 32) : 130 + index * 55
+        );
+        const status = isLatest
+          ? 'completed'
+          : seededChoice(['completed', 'completed', 'completed', 'refunded'], `${userSeed}-history-status-${index}`);
+
+        transactions.push({
+          user: user._id,
+          amount: getPlanAmount(planPurchased, billingCycle),
+          currency: 'VND',
+          planPurchased,
+          billingCycle,
+          status,
+          paymentMethod: seededChoice(PAYMENT_METHODS, `${userSeed}-payment-${index}`),
+          createdAt,
+          updatedAt: shiftDate(createdAt, { days: seededNumber(`${userSeed}-update-${index}`, 0, 3) })
+        });
+      }
+    } else {
+      const failedAttempts = seededNumber(`${userSeed}-attempt-count`, 1, 2);
+      for (let index = 0; index < failedAttempts; index += 1) {
+        const planPurchased = seededChoice(['standard', 'premium'], `${userSeed}-attempt-plan-${index}`);
+        const billingCycle = seededChoice(['monthly', 'annual'], `${userSeed}-attempt-cycle-${index}`);
+        const createdAt = seededDateDaysAgo(`${userSeed}-attempt-${index}`, 5 + index * 15, 75 + index * 25);
+
+        transactions.push({
+          user: user._id,
+          amount: getPlanAmount(planPurchased, billingCycle),
+          currency: 'VND',
+          planPurchased,
+          billingCycle,
+          status: seededChoice(['failed', 'pending'], `${userSeed}-attempt-status-${index}`),
+          paymentMethod: seededChoice(PAYMENT_METHODS, `${userSeed}-attempt-payment-${index}`),
+          createdAt,
+          updatedAt: shiftDate(createdAt, { days: seededNumber(`${userSeed}-attempt-update-${index}`, 0, 2) })
+        });
+      }
+    }
+
+    if (seededNumber(`${userSeed}-extra-attempt`, 1, 100) >= 65) {
+      const planPurchased = preferredPlan || seededChoice(['standard', 'premium'], `${userSeed}-extra-plan`);
+      const billingCycle = seededChoice(['monthly', 'annual'], `${userSeed}-extra-cycle`);
+      const createdAt = seededDateDaysAgo(`${userSeed}-extra-created`, 1, preferredPlan ? 18 : 45);
+
+      transactions.push({
+        user: user._id,
+        amount: getPlanAmount(planPurchased, billingCycle),
+        currency: 'VND',
+        planPurchased,
+        billingCycle,
+        status: preferredPlan
+          ? seededChoice(['pending', 'failed'], `${userSeed}-extra-status`)
+          : 'failed',
+        paymentMethod: seededChoice(PAYMENT_METHODS, `${userSeed}-extra-payment`),
+        createdAt,
+        updatedAt: shiftDate(createdAt, { days: 1 })
+      });
+    }
+  }
+
+  transactions.sort((a, b) => a.createdAt - b.createdAt);
+
+  if (transactions.length > 0) {
+    await Transaction.insertMany(transactions);
+  }
+
+  await syncUserPlansFromTransactions(users);
+}
+
+async function seedWatchlists(movies, demoUser, users) {
+  if (!Array.isArray(movies) || movies.length === 0 || !demoUser) return;
+
+  const watchlistOps = [];
+  const pool = [...movies].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const deviceTypes = ['desktop', 'mobile', 'tv', 'unknown'];
+  const upsertWatchItem = (user, movie, seed) => {
+    const lastWatchedAt = seededDateDaysAgo(`${seed}-last-watched`, 0, 45);
+    const durationSeconds = Math.max((Number(movie.durationMinutes) || 90) * 60, 1800);
+    const isCompleted = seededNumber(`${seed}-completed`, 1, 100) >= 74;
+    const progressSeconds = isCompleted
+      ? Math.max(durationSeconds - seededNumber(`${seed}-completion-gap`, 45, 360), 0)
+      : seededNumber(`${seed}-progress`, 180, Math.max(durationSeconds - 420, 900));
+
       watchlistOps.push({
         updateOne: {
           filter: { user: user._id, movie: movie._id },
           update: {
             $set: {
-              progressSeconds: Math.floor(Math.random() * 5400),
-              isCompleted: Math.random() > 0.8,
-              deviceType: pickRandom(deviceTypes),
-              lastWatchedAt: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000))
+              progressSeconds,
+              isCompleted,
+              deviceType: seededChoice(deviceTypes, `${seed}-device`),
+              lastWatchedAt
             }
           },
           upsert: true
         }
       });
-    }
+  };
+
+  const demoMovies = pickSeedEntries(pool, Math.min(14, pool.length), `${demoUser.email}-hero-watchlist`);
+  demoMovies.forEach((movie, index) => {
+    upsertWatchItem(demoUser, movie, `${demoUser.email}-demo-watch-${index}`);
+  });
+
+  const otherUsers = users.filter((user) => String(user._id) !== String(demoUser._id));
+  for (const user of otherUsers) {
+    const itemCount = seededNumber(`${user.email}-watchlist-count`, 4, 9);
+    const selectedMovies = pickSeedEntries(pool, Math.min(itemCount, pool.length), `${user.email}-watchlist`);
+    selectedMovies.forEach((movie, index) => {
+      upsertWatchItem(user, movie, `${user.email}-watch-${index}`);
+    });
   }
 
   if (watchlistOps.length > 0) {
@@ -1471,12 +2173,44 @@ async function seedWatchlists(movies, demoUser, users) {
   }
 }
 
-async function updateWatchedCounts() {
-  const aggregation = await Watchlist.aggregate([{ $group: { _id: '$user', count: { $sum: 1 } } }]);
+async function updateWatchedCounts(userIds) {
+  const userFilter = Array.isArray(userIds) && userIds.length > 0 ? { _id: { $in: userIds } } : {};
+  const watchMatch = Array.isArray(userIds) && userIds.length > 0 ? { user: { $in: userIds } } : {};
 
-  for (const item of aggregation) {
-    await User.updateOne({ _id: item._id }, { $set: { watchedCount: item.count * 8 } });
-  }
+  await User.updateMany(userFilter, { $set: { watchedCount: 0 } });
+
+  const aggregation = await Watchlist.aggregate([
+    { $match: watchMatch },
+    { $group: { _id: '$user', count: { $sum: 1 } } }
+  ]);
+
+  if (aggregation.length === 0) return;
+
+  await User.bulkWrite(
+    aggregation.map((item) => ({
+      updateOne: {
+        filter: { _id: item._id },
+        update: {
+          $set: {
+            watchedCount: (Number(item.count) || 0) * (6 + (hashString(String(item._id)) % 5))
+          }
+        }
+      }
+    }))
+  );
+}
+
+async function seedPricingSettings() {
+  await Setting.updateOne(
+    { key: 'pricing' },
+    {
+      $setOnInsert: { key: 'pricing' },
+      $set: {
+        subscriptionPlans: SUBSCRIPTION_PLANS
+      }
+    },
+    { upsert: true }
+  );
 }
 
 async function run() {
@@ -1487,7 +2221,9 @@ async function run() {
       await Promise.all([
         Watchlist.deleteMany({}),
         Comment.deleteMany({}),
+        Transaction.deleteMany({}),
         Movie.deleteMany({}),
+        Person.deleteMany({}),
         User.deleteMany({}),
         Category.deleteMany({}),
         Country.deleteMany({}),
@@ -1498,7 +2234,7 @@ async function run() {
       ]);
     }
 
-    const { adminUser, demoUser, commentUsers } = await seedUsers();
+    const { adminUser, demoUser, memberUsers } = await seedUsers();
     const movies = await seedMovies();
 
     // Ensure settings exist with a sensible hero list for the home page.
@@ -1518,27 +2254,33 @@ async function run() {
       },
       { upsert: true },
     );
+    await seedPricingSettings();
 
     // Ensure role permissions exist with defaults.
     await rolePermissionService.listRolePermissions();
 
-    await seedWatchlists(movies, demoUser, commentUsers);
-    await seedComments(movies, commentUsers);
-    await updateWatchedCounts();
+    await seedWatchlists(movies, demoUser, memberUsers);
+    await seedComments(movies, memberUsers);
+    await seedTransactions(memberUsers);
+    await updateWatchedCounts(memberUsers.map((user) => user._id));
 
-    const [movieCount, userCount, commentCount, watchlistCount] = await Promise.all([
+    const [movieCount, personCount, userCount, commentCount, watchlistCount, transactionCount] = await Promise.all([
       Movie.countDocuments(),
+      Person.countDocuments(),
       User.countDocuments(),
       Comment.countDocuments(),
-      Watchlist.countDocuments()
+      Watchlist.countDocuments(),
+      Transaction.countDocuments()
     ]);
 
     console.log('Seed completed successfully.');
     console.log(`Database: ${config.mongoUri}`);
     console.log(`Movies: ${movieCount}`);
+    console.log(`Persons: ${personCount}`);
     console.log(`Users: ${userCount}`);
     console.log(`Comments: ${commentCount}`);
     console.log(`Watchlist items: ${watchlistCount}`);
+    console.log(`Transactions: ${transactionCount}`);
     console.log('Demo credentials:');
     console.log(`- Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
     console.log(`- User: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);

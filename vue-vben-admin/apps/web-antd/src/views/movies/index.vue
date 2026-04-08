@@ -310,7 +310,7 @@ function triggerImportExcel() {
 
 async function downloadTemplate() {
   try {
-    const response = await requestClient.get('/movies/import/template', { responseType: 'blob', responseReturn: 'response' });
+    const response = await requestClient.get('/movies/import/template', { responseType: 'blob', responseReturn: 'raw' });
     const blob = new Blob([response.data || response]);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -864,7 +864,7 @@ function removeGalleryImage(index: number) {
                   <td class="px-6 py-4">
                     <p class="text-sm font-bold truncate max-w-[260px]">{{ movie.title }}</p>
                     <p class="text-[10px] text-slate-500 truncate max-w-[260px]">
-                      {{ movie.directors?.length ? 'Dir: ' + joinList(movie.directors) : '' }}
+                      {{ movie.directors?.length ? 'Dir: ' + joinList(movie.directors) : movie.director ? 'Dir: ' + movie.director : '' }}
                     </p>
                   </td>
                   <td class="px-6 py-4 text-sm">
@@ -1071,7 +1071,7 @@ function removeGalleryImage(index: number) {
 	                      mode="multiple"
 	                      style="width: 100%"
 	                      placeholder="Select Directors"
-	                      :options="personOptions.filter(p => true).map(o => ({ value: o.id, label: o.name }))"
+	                      :options="personOptions.map(o => ({ value: o.id, label: o.name }))"
 	                    />
 	                 </div>
 	                 <div class="col-span-2 md:col-span-1">
@@ -1081,7 +1081,7 @@ function removeGalleryImage(index: number) {
 	                      mode="multiple"
 	                      style="width: 100%"
 	                      placeholder="Select Actors"
-	                      :options="personOptions.filter(p => true).map(o => ({ value: o.id, label: o.name }))"
+	                      :options="personOptions.map(o => ({ value: o.id, label: o.name }))"
 	                    />
 	                 </div>
 	              </div>

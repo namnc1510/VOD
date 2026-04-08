@@ -9,6 +9,8 @@
         "seed:preview": "node scripts/seed-preview-data.js",
         "db:sync": "node scripts/sync-data.js",
         "db:sync:dry": "node scripts/sync-data.js --dry-run",
+        "db:atlas:push": "node scripts/push-local-to-atlas.js",
+        "db:atlas:dry": "node scripts/push-local-to-atlas.js --dry-run",
         "db:audit:images": "node scripts/audit-movie-images.js",
         "db:fix:images:dry": "node scripts/fix-movie-images.js --dry-run",
         "db:fix:images": "node scripts/fix-movie-images.js",

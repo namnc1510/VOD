@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 
 import MovieCard from '../components/MovieCard.vue';
+import { buildCommentShowcase, buildEpisodeShowcase } from '../data/showcase';
 import { getApiErrorMessage } from '../services/api';
 import { getMovieEpisodes, getMovieLanding, postMovieComment } from '../services/discovery';
 import { upsertWatchlist } from '../services/watchlist';
@@ -27,6 +28,15 @@ const slug = computed(() => route.params.slug);
 const movie = computed(() => landing.value?.movie || null);
 const commentsState = computed(() => landing.value?.comments || { items: [], total: 0 });
 const relatedMovies = computed(() => (Array.isArray(landing.value?.related) ? landing.value.related : []));
+const episodeShowcase = computed(() => buildEpisodeShowcase(movie.value, episodes.value));
+const displayedEpisodes = computed(() => episodeShowcase.value.items || []);
+const commentShowcase = computed(() => buildCommentShowcase(movie.value, commentsState.value));
+const displayedComments = computed(() => commentShowcase.value.items || []);
+const commentsCounter = computed(() => (
+  commentShowcase.value.isFallback
+    ? `${displayedComments.value.length}+`
+    : commentsState.value.total
+));
 
 const headData = computed(() => {
   if (!movie.value) return { title: 'Loading...', meta: [] };
@@ -92,14 +102,44 @@ const watchNowTo = computed(() => {
   return `/watch/${movieSlug}`;
 });
 
+const genresLabel = computed(() => {
+  if (!movie.value) return '-';
+  return (movie.value.genres || []).map((genre) => genre.name || genre).join(', ') || '-';
+});
+
+const displayedDirectors = computed(() => {
+  if (!movie.value) return [];
+
+  const linkedDirectors = normalizePersonCards(movie.value.directors);
+  if (linkedDirectors.length > 0) return linkedDirectors;
+
+  return normalizeLegacyNames(movie.value.director).map((name) => ({
+    name,
+    isLinked: false
+  }));
+});
+
+const displayedActors = computed(() => {
+  if (!movie.value) return [];
+
+  const linkedActors = normalizePersonCards(movie.value.actors);
+  if (linkedActors.length > 0) return linkedActors;
+
+  return normalizeLegacyNames(movie.value.cast).map((name) => ({
+    name,
+    isLinked: false
+  }));
+});
+
 const movieFacts = computed(() => {
   if (!movie.value) return [];
 
   return [
     { label: 'Năm phát hành', value: movie.value.releaseYear || 'N/A' },
     { label: 'Thời lượng', value: formatRuntime(movie.value.durationMinutes) },
-    { label: 'Ngôn ngữ', value: movie.value.audioLanguage || '-' },
+    { label: 'Ngôn ngữ', value: movie.value.language || movie.value.audioLanguage || '-' },
     { label: 'Độ tuổi', value: movie.value.ageRating || '-' },
+    { label: 'Thể loại', value: genresLabel.value },
     {
       label: 'Quốc gia',
       value: (movie.value.countries || []).map((country) => country.name || country).join(', ') || '-'
@@ -110,6 +150,64 @@ const movieFacts = computed(() => {
 function resolvePersonLink(person) {
   const value = typeof person === 'object' ? person : { name: String(person || '') };
   return `/person/${value.slug || toSlug(value.name)}`;
+}
+
+function getEpisodeTarget(episode) {
+  if (!movie.value) return '';
+  if (movie.value.isPremiumLocked) return '/pricing';
+  if (episode?.preview) return watchNowTo.value;
+  return { path: `/watch/${movie.value.slug}`, query: { episodeId: episode.id } };
+}
+
+function normalizeLegacyNames(input) {
+  const source = Array.isArray(input) ? input : input ? [input] : [];
+  const seen = new Set();
+
+  return source
+    .flatMap((item) => String(item || '').split(','))
+    .map((item) => String(item || '').trim())
+    .filter((item) => {
+      if (!item) return false;
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function normalizePersonCards(input) {
+  if (!Array.isArray(input)) return [];
+
+  const seen = new Set();
+
+  return input
+    .map((item) => {
+      if (item && typeof item === 'object') {
+        const name = String(item.name || '').trim();
+        if (!name) return null;
+
+        return {
+          ...item,
+          name,
+          isLinked: Boolean(item.slug)
+        };
+      }
+
+      const name = String(item || '').trim();
+      if (!name) return null;
+
+      return {
+        name,
+        isLinked: false
+      };
+    })
+    .filter((item) => {
+      if (!item) return false;
+      const key = item.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 async function loadMovie() {
@@ -338,7 +436,7 @@ watch(slug, loadMovie, { immediate: true });
                 :class="activeTab === 'comments' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
                 @click="activeTab = 'comments'"
               >
-                Bình luận ({{ commentsState.total }})
+                Bình luận ({{ commentsCounter }})
               </button>
             </div>
 
@@ -358,16 +456,17 @@ watch(slug, loadMovie, { immediate: true });
               </div>
 
               <div
-                v-if="(movie.directors && movie.directors.length) || (movie.actors && movie.actors.length)"
+                v-if="displayedDirectors.length || displayedActors.length"
                 class="mt-8 grid gap-6 xl:grid-cols-2"
               >
-                <div v-if="movie.directors && movie.directors.length" class="space-y-4">
+                <div v-if="displayedDirectors.length" class="space-y-4">
                   <h3 class="text-xl font-black text-slate-900 dark:text-white">Đạo diễn</h3>
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <RouterLink
-                      v-for="director in movie.directors"
+                    <component
+                      :is="director.isLinked ? RouterLink : 'div'"
+                      v-for="director in displayedDirectors"
                       :key="director._id || director.slug || director.name"
-                      :to="resolvePersonLink(director)"
+                      v-bind="director.isLinked ? { to: resolvePersonLink(director) } : {}"
                       class="panel-muted flex items-center gap-3 p-4 transition-colors hover:border-primary/25 hover:bg-white dark:hover:bg-slate-900"
                     >
                       <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800">
@@ -378,17 +477,18 @@ watch(slug, loadMovie, { immediate: true });
                         <p class="truncate text-sm font-black text-slate-900 dark:text-white">{{ director.name }}</p>
                         <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Director</p>
                       </div>
-                    </RouterLink>
+                    </component>
                   </div>
                 </div>
 
-                <div v-if="movie.actors && movie.actors.length" class="space-y-4">
+                <div v-if="displayedActors.length" class="space-y-4">
                   <h3 class="text-xl font-black text-slate-900 dark:text-white">Diễn viên</h3>
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <RouterLink
-                      v-for="actor in movie.actors"
+                    <component
+                      :is="actor.isLinked ? RouterLink : 'div'"
+                      v-for="actor in displayedActors"
                       :key="actor._id || actor.slug || actor.name"
-                      :to="resolvePersonLink(actor)"
+                      v-bind="actor.isLinked ? { to: resolvePersonLink(actor) } : {}"
                       class="panel-muted flex items-center gap-3 p-4 transition-colors hover:border-primary/25 hover:bg-white dark:hover:bg-slate-900"
                     >
                       <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800">
@@ -399,7 +499,7 @@ watch(slug, loadMovie, { immediate: true });
                         <p class="truncate text-sm font-black text-slate-900 dark:text-white">{{ actor.name }}</p>
                         <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Actor</p>
                       </div>
-                    </RouterLink>
+                    </component>
                   </div>
                 </div>
               </div>
@@ -454,39 +554,77 @@ watch(slug, loadMovie, { immediate: true });
                 <span>Đang tải danh sách tập...</span>
               </div>
 
-              <div v-else-if="episodes.length" class="mt-6 grid gap-3 sm:grid-cols-2">
-                <RouterLink
-                  v-for="episode in episodes"
-                  :key="episode.id"
-                  :to="movie.isPremiumLocked ? '/pricing' : { path: `/watch/${movie.slug}`, query: { episodeId: episode.id } }"
-                  class="rounded-2xl border p-4 transition-colors"
-                  :class="
-                    movie.isPremiumLocked
-                      ? 'border-amber-500/18 bg-amber-500/8 text-slate-700 dark:text-slate-200'
-                      : 'border-slate-200 bg-slate-50 hover:border-primary/28 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-900'
-                  "
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="truncate text-sm font-black text-slate-900 dark:text-white">
-                        Tập {{ String(episode.epNo).padStart(2, '0') }}: {{ episode.title }}
-                      </p>
-                      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {{ episode.durationSeconds ? `${Math.round(episode.durationSeconds / 60)} phút` : 'Video stream' }}
-                      </p>
+              <template v-else>
+                <div class="mt-6 grid gap-4 md:grid-cols-3">
+                  <article
+                    v-for="stat in episodeShowcase.stats"
+                    :key="stat.label"
+                    class="panel-muted flex items-start gap-4 p-5"
+                  >
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                      <span class="material-symbols-outlined text-[20px]">{{ stat.icon }}</span>
                     </div>
-                    <span class="material-symbols-outlined text-primary">{{ movie.isPremiumLocked ? 'lock' : 'play_circle' }}</span>
-                  </div>
-                </RouterLink>
-              </div>
-
-              <div v-else class="empty-state mt-6">
-                <div class="flex size-18 items-center justify-center rounded-full bg-primary/12 text-primary">
-                  <span class="material-symbols-outlined text-4xl">movie</span>
+                    <div>
+                      <p class="control-label">{{ stat.label }}</p>
+                      <p class="text-base font-black text-slate-900 dark:text-white">{{ stat.value }}</p>
+                    </div>
+                  </article>
                 </div>
-                <h3 class="section-title">Đây là phim lẻ.</h3>
-                <p class="page-copy text-center">Không có danh sách tập riêng cho nội dung này, bạn có thể xem trực tiếp bằng nút “Xem ngay”.</p>
-              </div>
+
+                <div v-if="episodeShowcase.isFallback" class="status-card status-info mt-5">
+                  <span class="material-symbols-outlined text-[18px]">preview</span>
+                  <span>{{ episodeShowcase.description }}</span>
+                </div>
+
+                <div v-if="displayedEpisodes.length" class="mt-6 grid gap-3 sm:grid-cols-2">
+                  <RouterLink
+                    v-for="episode in displayedEpisodes"
+                    :key="episode.id"
+                    :to="getEpisodeTarget(episode)"
+                    class="rounded-2xl border p-4 transition-colors"
+                    :class="
+                      movie.isPremiumLocked
+                        ? 'border-amber-500/18 bg-amber-500/8 text-slate-700 dark:text-slate-200'
+                        : 'border-slate-200 bg-slate-50 hover:border-primary/28 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-900'
+                    "
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-black text-slate-900 dark:text-white">
+                          Tập {{ String(episode.epNo).padStart(2, '0') }}: {{ episode.title }}
+                        </p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          {{ episode.durationMinutes ? `${episode.durationMinutes} phút` : 'Video stream' }}
+                        </p>
+                      </div>
+                      <span class="material-symbols-outlined text-primary">{{ movie.isPremiumLocked ? 'lock' : 'play_circle' }}</span>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <span class="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {{ episode.streamLabel }}
+                      </span>
+                      <span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                        {{ episode.availability }}
+                      </span>
+                      <span
+                        v-if="episode.preview"
+                        class="rounded-full bg-amber-500/12 px-2.5 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-300"
+                      >
+                        Preview UI
+                      </span>
+                    </div>
+                  </RouterLink>
+                </div>
+
+                <div v-else class="empty-state mt-6">
+                  <div class="flex size-18 items-center justify-center rounded-full bg-primary/12 text-primary">
+                    <span class="material-symbols-outlined text-4xl">movie</span>
+                  </div>
+                  <h3 class="section-title">Đây là phim lẻ.</h3>
+                  <p class="page-copy text-center">Không có danh sách tập riêng cho nội dung này, bạn có thể xem trực tiếp bằng nút “Xem ngay”.</p>
+                </div>
+              </template>
             </div>
 
             <div v-show="activeTab === 'comments'" class="p-6 sm:p-7">
@@ -495,6 +633,37 @@ watch(slug, loadMovie, { immediate: true });
                   <h2 class="section-title">Bình luận</h2>
                   <p class="section-copy">Trao đổi cảm nhận trực tiếp dưới trang chi tiết phim.</p>
                 </div>
+              </div>
+
+              <div class="mt-6 grid gap-4 md:grid-cols-3">
+                <article
+                  v-for="stat in commentShowcase.stats"
+                  :key="stat.label"
+                  class="panel-muted flex items-start gap-4 p-5"
+                >
+                  <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                    <span class="material-symbols-outlined text-[20px]">{{ stat.icon }}</span>
+                  </div>
+                  <div>
+                    <p class="control-label">{{ stat.label }}</p>
+                    <p class="text-base font-black text-slate-900 dark:text-white">{{ stat.value }}</p>
+                  </div>
+                </article>
+              </div>
+
+              <div class="mt-4 flex flex-wrap gap-2">
+                <span
+                  v-for="chip in commentShowcase.chips"
+                  :key="chip"
+                  class="rounded-full bg-slate-100 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  {{ chip }}
+                </span>
+              </div>
+
+              <div v-if="commentShowcase.isFallback" class="status-card status-info mt-5">
+                <span class="material-symbols-outlined text-[18px]">forum</span>
+                <span>Backend chưa có comment. Đang hiển thị bình luận mẫu để bố cục không bị trống.</span>
               </div>
 
               <div class="panel-muted mt-6 p-5">
@@ -511,9 +680,9 @@ watch(slug, loadMovie, { immediate: true });
                 </div>
               </div>
 
-              <div v-if="commentsState.items.length" class="mt-6 space-y-4">
+              <div v-if="displayedComments.length" class="mt-6 space-y-4">
                 <article
-                  v-for="comment in commentsState.items"
+                  v-for="comment in displayedComments"
                   :key="comment.id"
                   class="panel-muted p-5"
                 >
@@ -536,6 +705,26 @@ watch(slug, loadMovie, { immediate: true });
                         <span class="text-xs text-slate-500 dark:text-slate-400">{{ relativeFromNow(comment.createdAt) }}</span>
                       </div>
                       <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{{ comment.content }}</p>
+                      <div v-if="comment.badge || comment.mood || comment.likes" class="mt-3 flex flex-wrap gap-2">
+                        <span
+                          v-if="comment.badge"
+                          class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary"
+                        >
+                          {{ comment.badge }}
+                        </span>
+                        <span
+                          v-if="comment.mood"
+                          class="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                          {{ comment.mood }}
+                        </span>
+                        <span
+                          v-if="comment.likes"
+                          class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300"
+                        >
+                          {{ comment.likes }} helpful
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </article>
